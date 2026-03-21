@@ -1,0 +1,13 @@
+<% content_for :title, "Tạo phiếu mượn" %>
+
+<div class="max-w-2xl mx-auto">
+  <div class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+    <%= link_to "Mượn – Trả", borrows_path, class: "hover:text-indigo-400 transition-colors" %>
+    <span>›</span><span class="text-gray-300">Tạo phiếu mượn</span>
+  </div>
+
+  <div class="bg-[#1a1d2e] card-glow rounded-2xl p-6">
+    <h1 class="text-xl font-bold text-white mb-6">Tạo phiếu mượn thiết bị</h1>
+    <%= render "form", borrow: @borrow, available_devices: @available_devices %>
+  </div>
+</div>

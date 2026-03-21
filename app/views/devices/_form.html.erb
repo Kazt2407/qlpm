@@ -1,0 +1,112 @@
+<%# Shared form for devices/new and devices/edit %>
+<%= form_with model: device, local: true, class: "space-y-5" do |f| %>
+  <% if device.errors.any? %>
+    <div class="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+      <ul class="list-disc list-inside space-y-1">
+        <% device.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-2 gap-5">
+    <div>
+      <%= f.label :code, "Mã thiết bị", class: "text-gray-400 text-xs mb-1.5 block" %>
+      <%= f.text_field :code, placeholder: "VD: PC-A-025",
+            class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    </div>
+    <div>
+      <%= f.label :device_type, "Loại thiết bị", class: "text-gray-400 text-xs mb-1.5 block" %>
+      <%= f.select :device_type,
+            [["-- Chọn loại --", ""]] + Device::TYPES.map { |t| [t, t] },
+            {},
+            class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    </div>
+  </div>
+
+  <div>
+    <%= f.label :name, "Tên thiết bị", class: "text-gray-400 text-xs mb-1.5 block" %>
+    <%= f.text_field :name, placeholder: "VD: Dell OptiPlex 3080",
+          class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+  </div>
+
+  <div class="grid grid-cols-2 gap-5">
+    <div>
+      <%= f.label :brand, "Thương hiệu", class: "text-gray-400 text-xs mb-1.5 block" %>
+      <%= f.text_field :brand, placeholder: "VD: Dell",
+            class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    </div>
+    <div>
+      <%= f.label :model_name, "Model", class: "text-gray-400 text-xs mb-1.5 block" %>
+      <%= f.text_field :model_name, placeholder: "VD: OptiPlex 3080",
+            class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-5">
+    <div>
+      <%= f.label :room, "Phòng", class: "text-gray-400 text-xs mb-1.5 block" %>
+      <%= f.select :room,
+            [["-- Chọn phòng --", ""]] + Device::ROOMS.map { |r| [r, r] },
+            {},
+            class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    </div>
+    <div>
+      <%= f.label :desk_number, "Số bàn", class: "text-gray-400 text-xs mb-1.5 block" %>
+      <%= f.number_field :desk_number, placeholder: "VD: 5",
+            class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-5">
+    <div>
+      <%= f.label :imported_at, "Ngày nhập", class: "text-gray-400 text-xs mb-1.5 block" %>
+      <%= f.date_field :imported_at,
+            class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    </div>
+    <div>
+      <%= f.label :warranty_until, "Bảo hành đến", class: "text-gray-400 text-xs mb-1.5 block" %>
+      <%= f.date_field :warranty_until,
+            class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    </div>
+  </div>
+
+  <div>
+    <%= f.label :status, "Trạng thái", class: "text-gray-400 text-xs mb-1.5 block" %>
+    <%= f.select :status,
+          [["Hoạt động", "active"], ["Đang mượn", "borrowed"], ["Hỏng", "broken"], ["Bảo trì", "maintenance"]],
+          {},
+          class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+  </div>
+
+  <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider pt-2">Thông số kỹ thuật (tuỳ chọn)</p>
+  <div class="grid grid-cols-2 gap-5">
+    <% [[:cpu, "CPU", "VD: Intel Core i5-10400"], [:ram, "RAM", "VD: 8 GB DDR4"],
+        [:storage, "Ổ cứng", "VD: 256 GB SSD"], [:os, "Hệ điều hành", "VD: Windows 10 Pro"]].each do |field, label, ph| %>
+      <div>
+        <%= f.label field, label, class: "text-gray-400 text-xs mb-1.5 block" %>
+        <%= f.text_field field, placeholder: ph,
+              class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+      </div>
+    <% end %>
+  </div>
+  <div>
+    <%= f.label :ip_address, "IP Address", class: "text-gray-400 text-xs mb-1.5 block" %>
+    <%= f.text_field :ip_address, placeholder: "VD: 192.168.1.101",
+          class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+  </div>
+
+  <div>
+    <%= f.label :notes, "Ghi chú", class: "text-gray-400 text-xs mb-1.5 block" %>
+    <%= f.text_area :notes, rows: 3, placeholder: "Mô tả tình trạng, lưu ý...",
+          class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50 resize-none" %>
+  </div>
+
+  <div class="flex gap-3 pt-2">
+    <%= link_to "Hủy", devices_path,
+          class: "flex-1 border border-white/10 text-gray-300 text-sm py-2.5 rounded-lg hover:bg-white/5 transition-colors text-center" %>
+    <%= f.submit device.new_record? ? "Lưu thiết bị" : "Cập nhật thiết bị",
+          class: "flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm py-2.5 rounded-lg font-medium transition-colors cursor-pointer" %>
+  </div>
+<% end %>

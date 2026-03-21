@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= content_for?(:title) ? yield(:title) + " – " : "" %>PhòngMáy Pro</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <style>
+    * { font-family: 'Be Vietnam Pro', sans-serif; }
+    body { background: #0f1117; }
+    .sidebar-link { transition: all .2s; }
+    .sidebar-link:hover,
+    .sidebar-link.active {
+      background: rgba(99,102,241,.15);
+      border-left: 3px solid #6366f1;
+      color: #a5b4fc;
+    }
+    .card-glow { box-shadow: 0 0 0 1px rgba(99,102,241,.15), 0 4px 24px rgba(0,0,0,.4); }
+    .badge-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .flash-notice { background: rgba(52,211,153,.1); border: 1px solid rgba(52,211,153,.3); color: #6ee7b7; }
+    .flash-alert  { background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3); color: #fca5a5; }
+  </style>
+</head>
+<body class="text-gray-300 min-h-screen flex">
+
+  <%# ── Sidebar ─────────────────────────────────────────────── %>
+  <aside class="w-64 bg-[#13151f] border-r border-white/5 flex flex-col fixed h-full z-10">
+    <div class="px-6 py-5 border-b border-white/5">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">PM</div>
+        <div>
+          <p class="text-white font-bold text-sm leading-tight">PhòngMáy Pro</p>
+          <p class="text-gray-500 text-xs">v2.0 – THPT Nguyễn Du</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 py-4 space-y-1 text-sm overflow-y-auto">
+      <p class="text-gray-600 text-xs font-semibold uppercase tracking-wider px-3 mb-2">Tổng quan</p>
+
+      <%= link_to root_path,
+            class: "sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 #{active_link?('dashboard') ? 'active' : ''}" do %>
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/>
+          <rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/>
+          <rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/>
+          <rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/>
+        </svg>
+        Dashboard
+      <% end %>
+
+      <p class="text-gray-600 text-xs font-semibold uppercase tracking-wider px-3 mt-4 mb-2">Quản lý</p>
+
+      <%= link_to devices_path,
+            class: "sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 #{active_link?('devices') ? 'active' : ''}" do %>
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="2" y="3" width="20" height="14" rx="2" stroke-width="2"/>
+          <path d="M8 21h8M12 17v4" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Danh sách thiết bị
+        <% if @sidebar_broken&.positive? %>
+          <span class="ml-auto text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full"><%= @sidebar_broken %></span>
+        <% end %>
+      <% end %>
+
+      <%= link_to borrows_path,
+            class: "sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 #{active_link?('borrows') ? 'active' : ''}" do %>
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M8 7h12M8 12h12M8 17h12M4 7h.01M4 12h.01M4 17h.01" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Mượn – Trả thiết bị
+        <% overdue_count = Borrow.overdue.count rescue 0 %>
+        <% if overdue_count.positive? %>
+          <span class="ml-auto text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full"><%= overdue_count %></span>
+        <% end %>
+      <% end %>
+
+      <%= link_to reports_path,
+            class: "sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 #{active_link?('reports') ? 'active' : ''}" do %>
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M3 3v18h18" stroke-width="2" stroke-linecap="round"/>
+          <path d="M7 16l4-4 4 4 5-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Báo cáo thống kê
+      <% end %>
+    </nav>
+
+    <%# System status %>
+    <div class="px-4 py-3 mx-3 mb-3 bg-white/[0.03] rounded-xl border border-white/5 text-xs">
+      <div class="flex justify-between text-gray-500 mb-1">
+        <span>Tổng thiết bị</span><span class="text-white font-semibold"><%= @sidebar_total %></span>
+      </div>
+      <div class="flex justify-between text-gray-500 mb-1">
+        <span>Hoạt động</span><span class="text-emerald-400 font-semibold"><%= @sidebar_active %></span>
+      </div>
+      <div class="flex justify-between text-gray-500">
+        <span>Đang mượn</span><span class="text-amber-400 font-semibold"><%= @sidebar_borrowed %></span>
+      </div>
+    </div>
+
+    <div class="px-4 py-4 border-t border-white/5">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-xs font-bold text-white">AD</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-white text-xs font-semibold truncate">Admin Trường</p>
+          <p class="text-gray-500 text-xs truncate">admin@school.edu.vn</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <%# ── Main content ────────────────────────────────────────── %>
+  <main class="ml-64 flex-1 p-8 min-h-screen">
+
+    <%# Flash messages %>
+    <% flash.each do |type, msg| %>
+      <div class="flash-<%= type == 'notice' ? 'notice' : 'alert' %> rounded-xl px-4 py-3 mb-6 text-sm flex items-center gap-2">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <% if type == 'notice' %>
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/>
+          <% else %>
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke-width="2" stroke-linecap="round"/>
+          <% end %>
+        </svg>
+        <%= msg %>
+      </div>
+    <% end %>
+
+    <%= yield %>
+  </main>
+
+</body>
+</html>

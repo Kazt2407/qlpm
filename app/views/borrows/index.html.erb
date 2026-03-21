@@ -1,0 +1,105 @@
+<% content_for :title, "Mượn – Trả thiết bị" %>
+
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-extrabold text-white">Quản lý Mượn – Trả</h1>
+    <p class="text-gray-500 text-sm mt-1">Theo dõi tình trạng mượn thiết bị</p>
+  </div>
+  <%= link_to new_borrow_path,
+        class: "bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2" do %>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/></svg>
+    Tạo phiếu mượn
+  <% end %>
+</div>
+
+<%# KPI summary %>
+<div class="grid grid-cols-3 gap-5 mb-6">
+  <% [
+       { label: "Đang mượn",       value: @total_borrowing, color: "amber",   icon: "clock" },
+       { label: "Đã trả tháng này",value: @total_returned,  color: "emerald", icon: "check" },
+       { label: "Quá hạn trả",     value: @total_overdue,   color: "red",     icon: "alert" }
+     ].each do |s| %>
+  <div class="bg-[#1a1d2e] card-glow rounded-2xl p-5 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-xl bg-<%= s[:color] %>-500/20 flex items-center justify-center shrink-0">
+      <% if s[:icon] == "clock" %>
+        <svg class="w-6 h-6 text-<%= s[:color] %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round"/></svg>
+      <% elsif s[:icon] == "check" %>
+        <svg class="w-6 h-6 text-<%= s[:color] %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/></svg>
+      <% else %>
+        <svg class="w-6 h-6 text-<%= s[:color] %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke-width="2" stroke-linecap="round"/></svg>
+      <% end %>
+    </div>
+    <div>
+      <p class="text-2xl font-extrabold text-white"><%= s[:value] %></p>
+      <p class="text-gray-500 text-sm"><%= s[:label] %></p>
+    </div>
+  </div>
+  <% end %>
+</div>
+
+<%# Tab filter %>
+<div class="flex gap-1 bg-[#1a1d2e] w-fit p-1 rounded-xl mb-6 border border-white/5">
+  <% [["all", "Tất cả"], ["borrowing", "Đang mượn"], ["returned", "Đã trả"], ["overdue", "Quá hạn"]].each do |tab, label| %>
+    <%= link_to label, borrows_path(tab: tab),
+          class: "text-sm px-4 py-1.5 rounded-lg font-medium transition-all #{@active_tab == tab ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}" %>
+  <% end %>
+</div>
+
+<%# Table %>
+<div class="bg-[#1a1d2e] card-glow rounded-2xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-white/5 bg-white/[0.02]">
+        <th class="text-left px-6 py-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">Mã phiếu</th>
+        <th class="text-left px-6 py-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">Thiết bị</th>
+        <th class="text-left px-6 py-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">Người mượn</th>
+        <th class="text-left px-6 py-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">Ngày mượn</th>
+        <th class="text-left px-6 py-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">Hạn trả</th>
+        <th class="text-left px-6 py-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">Trạng thái</th>
+        <th class="text-left px-6 py-4 text-gray-500 font-semibold text-xs uppercase tracking-wider">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-white/5">
+      <% if @borrows.any? %>
+        <% @borrows.each do |borrow| %>
+          <tr class="hover:bg-white/[0.02] transition-colors <%= borrow.overdue? ? 'bg-red-950/10' : '' %>">
+            <td class="px-6 py-4 text-indigo-400 font-semibold">#MT-<%= borrow.id.to_s.rjust(8, '0') %></td>
+            <td class="px-6 py-4">
+              <div class="text-white font-medium"><%= borrow.device.name %></div>
+              <div class="text-gray-500 text-xs"><%= borrow.device.code %></div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="text-white"><%= borrow.borrower_name %></div>
+              <div class="text-gray-500 text-xs"><%= borrow.borrower_class %></div>
+            </td>
+            <td class="px-6 py-4 text-gray-400"><%= vn_date(borrow.borrowed_at) %></td>
+            <td class="px-6 py-4 <%= borrow.overdue? ? 'text-red-400 font-semibold' : 'text-gray-400' %>">
+              <%= vn_date(borrow.due_at) %>
+              <% if borrow.overdue? %><div class="text-xs">Trễ <%= borrow.days_overdue %> ngày</div><% end %>
+            </td>
+            <td class="px-6 py-4"><%= status_badge(borrow.status_label, borrow.status_color) %></td>
+            <td class="px-6 py-4">
+              <div class="flex gap-2 flex-wrap">
+                <% if borrow.returned_at.nil? %>
+                  <%= button_to "Xác nhận trả", confirm_return_borrow_path(borrow), method: :patch,
+                        class: "bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-lg transition-colors" %>
+                  <% if borrow.overdue? %>
+                    <%= button_to "Nhắc nhở", send_reminder_borrow_path(borrow), method: :post,
+                          class: "border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs px-3 py-1.5 rounded-lg transition-colors" %>
+                  <% end %>
+                <% else %>
+                  <%= link_to "Xem chi tiết", borrow_path(borrow),
+                        class: "border border-white/10 text-gray-400 hover:text-white text-xs px-3 py-1.5 rounded-lg transition-colors" %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="7" class="px-6 py-12 text-center text-gray-600">Không có phiếu mượn nào.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

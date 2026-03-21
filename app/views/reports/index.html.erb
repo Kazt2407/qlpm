@@ -1,0 +1,132 @@
+<% content_for :title, "Báo cáo thống kê" %>
+
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-extrabold text-white">Báo cáo thống kê</h1>
+    <p class="text-gray-500 text-sm mt-1">Tổng hợp dữ liệu thiết bị phòng máy</p>
+  </div>
+  <div class="flex gap-3">
+    <%= form_with url: reports_path, method: :get, local: true, class: "flex gap-3" do |f| %>
+      <%= f.select :month,
+            @available_months.map { |m| [m.strftime("Tháng %m/%Y"), m.strftime("%Y-%m-01")] },
+            { selected: @month.strftime("%Y-%m-01") },
+            class: "bg-[#1a1d2e] border border-white/10 text-gray-300 text-sm px-3 py-2 rounded-lg focus:outline-none" %>
+      <%= f.submit "Xem", class: "bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 rounded-lg cursor-pointer transition-colors" %>
+    <% end %>
+    <%= link_to export_reports_path, class: "border border-white/10 text-gray-300 hover:bg-white/5 text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-width="2" stroke-linecap="round"/></svg>
+      Xuất PDF
+    <% end %>
+  </div>
+</div>
+
+<%# KPI cards %>
+<div class="grid grid-cols-4 gap-5 mb-8">
+  <% [
+       { label: "Tổng lượt mượn",     value: @total_borrows,      sub: "+12% so tháng trước", sub_color: "emerald" },
+       { label: "Trả đúng hạn",        value: "#{@on_time_return_pct}%", sub: "+2.1% so tháng trước", sub_color: "emerald" },
+       { label: "Thiết bị hỏng mới",  value: @new_broken,         sub: "Cần xử lý",            sub_color: "red" },
+       { label: "Đang bảo trì",        value: @under_repair,       sub: "Đang xử lý",           sub_color: "gray" }
+     ].each do |s| %>
+  <div class="bg-[#1a1d2e] card-glow rounded-2xl p-5">
+    <p class="text-gray-500 text-xs uppercase tracking-wider mb-3"><%= s[:label] %></p>
+    <p class="text-3xl font-extrabold text-white"><%= s[:value] %></p>
+    <p class="text-<%= s[:sub_color] %>-400 text-xs mt-1"><%= s[:sub] %></p>
+  </div>
+  <% end %>
+</div>
+
+<div class="grid grid-cols-2 gap-6 mb-6">
+
+  <%# Monthly borrow chart %>
+  <div class="bg-[#1a1d2e] card-glow rounded-2xl p-6">
+    <h2 class="text-white font-bold mb-1">Lượt mượn theo tháng</h2>
+    <p class="text-gray-500 text-xs mb-5">7 tháng gần đây</p>
+    <% max_val = [@monthly_trend.map { |m| m[:count] }.max, 1].max %>
+    <div class="flex items-end gap-3 h-40">
+      <% @monthly_trend.each_with_index do |m, i| %>
+        <% pct = (m[:count].to_f / max_val * 100).round %>
+        <% is_last = i == @monthly_trend.size - 1 %>
+        <div class="flex-1 flex flex-col items-center gap-1">
+          <span class="text-<%= is_last ? 'white' : 'gray-600' %> text-xs <%= is_last ? 'font-semibold' : '' %>"><%= m[:count] %></span>
+          <div class="w-full bg-<%= is_last ? 'indigo-500' : 'indigo-500/30' %> rounded-t-md"
+               style="height:<%= [pct, 5].max %>%; transition: height 1s ease;"></div>
+          <span class="text-<%= is_last ? 'indigo-400 font-semibold' : 'gray-600' %> text-xs"><%= m[:month] %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Devices by type %>
+  <div class="bg-[#1a1d2e] card-glow rounded-2xl p-6">
+    <h2 class="text-white font-bold mb-1">Thiết bị theo loại</h2>
+    <p class="text-gray-500 text-xs mb-5">Tỷ lệ đang hoạt động</p>
+    <% colors = %w[indigo purple teal cyan amber] %>
+    <div class="space-y-4">
+      <% @devices_by_type.each_with_index do |row, i| %>
+        <% color = colors[i % colors.size] %>
+        <div>
+          <div class="flex justify-between text-xs mb-1.5">
+            <span class="text-gray-300"><%= row[:type] %> (<%= row[:total] %>)</span>
+            <span class="text-<%= color %>-400"><%= row[:pct] %>%</span>
+          </div>
+          <div class="h-3 bg-white/5 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-<%= color %>-600 to-<%= color %>-400 rounded-full"
+                 style="width:<%= row[:pct] %>%; transition: width 1s ease;"></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 gap-6">
+
+  <%# Top borrowers %>
+  <div class="bg-[#1a1d2e] card-glow rounded-2xl p-6">
+    <h2 class="text-white font-bold mb-5">Top người mượn nhiều nhất</h2>
+    <% icon_colors = %w[indigo purple teal amber red] %>
+    <div class="space-y-3">
+      <% @top_borrowers.each_with_index do |((name, klass), count), idx| %>
+        <% initials = name.split.map { |w| w[0] }.last(2).join %>
+        <div class="flex items-center gap-3">
+          <span class="text-gray-600 text-sm w-5"><%= idx + 1 %></span>
+          <div class="w-8 h-8 rounded-full bg-<%= icon_colors[idx % icon_colors.size] %>-500/20 flex items-center justify-center text-<%= icon_colors[idx % icon_colors.size] %>-400 text-xs font-bold"><%= initials %></div>
+          <div class="flex-1">
+            <p class="text-white text-sm"><%= name %></p>
+            <p class="text-gray-500 text-xs"><%= klass %></p>
+          </div>
+          <span class="text-indigo-400 font-bold text-sm"><%= count %> lần</span>
+        </div>
+      <% end %>
+      <% if @top_borrowers.empty? %>
+        <p class="text-gray-600 text-sm text-center py-4">Chưa có dữ liệu.</p>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Broken / maintenance devices %>
+  <div class="bg-[#1a1d2e] card-glow rounded-2xl p-6">
+    <h2 class="text-white font-bold mb-5">Thiết bị hỏng cần xử lý</h2>
+    <div class="space-y-3">
+      <% if @broken_devices.any? %>
+        <% @broken_devices.first(3).each do |device| %>
+          <div class="flex items-center gap-3 p-3 bg-<%= device.status == 'broken' ? 'red' : 'amber' %>-500/5 border border-<%= device.status == 'broken' ? 'red' : 'amber' %>-500/15 rounded-xl">
+            <div class="w-8 h-8 rounded-lg bg-<%= device.status == 'broken' ? 'red' : 'amber' %>-500/20 flex items-center justify-center">
+              <svg class="w-4 h-4 text-<%= device.status == 'broken' ? 'red' : 'amber' %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" stroke-width="2"/><path d="M8 21h8M12 17v4" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="flex-1">
+              <p class="text-white text-sm font-medium"><%= device.name %></p>
+              <p class="text-gray-500 text-xs"><%= vn_date(device.updated_at) %> · <%= device.room %></p>
+            </div>
+            <%= status_badge(device.status_label, device.status_color) %>
+          </div>
+        <% end %>
+        <%= link_to "Xem tất cả thiết bị hỏng →", devices_path(status: "broken"),
+              class: "w-full block text-center border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 text-sm py-2.5 rounded-xl transition-colors mt-1" %>
+      <% else %>
+        <p class="text-gray-600 text-sm text-center py-6">Không có thiết bị hỏng.</p>
+      <% end %>
+    </div>
+  </div>
+</div>

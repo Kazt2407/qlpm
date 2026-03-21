@@ -1,0 +1,51 @@
+<%# app/views/borrows/_form.html.erb %>
+<%= form_with model: borrow, local: true, class: "space-y-4" do |f| %>
+  <% if borrow.errors.any? %>
+    <div class="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+      <ul class="list-disc list-inside space-y-1">
+        <% borrow.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :device_id, "Thiết bị mượn", class: "text-gray-400 text-xs mb-1.5 block" %>
+    <%= f.select :device_id,
+          [["-- Chọn thiết bị --", ""]] + available_devices.map { |d| ["#{d.code} – #{d.name}", d.id] },
+          {},
+          class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+  </div>
+  <div>
+    <%= f.label :borrower_name, "Người mượn", class: "text-gray-400 text-xs mb-1.5 block" %>
+    <%= f.text_field :borrower_name, placeholder: "Họ và tên...",
+          class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+  </div>
+  <div>
+    <%= f.label :borrower_class, "Lớp / Chức vụ", class: "text-gray-400 text-xs mb-1.5 block" %>
+    <%= f.text_field :borrower_class, placeholder: "VD: Lớp 10A1 hoặc Giáo viên",
+          class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+  </div>
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <%= f.label :borrowed_at, "Ngày mượn", class: "text-gray-400 text-xs mb-1.5 block" %>
+      <%= f.date_field :borrowed_at,
+            class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    </div>
+    <div>
+      <%= f.label :due_at, "Hạn trả", class: "text-gray-400 text-xs mb-1.5 block" %>
+      <%= f.date_field :due_at,
+            class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    </div>
+  </div>
+  <div>
+    <%= f.label :purpose, "Mục đích sử dụng", class: "text-gray-400 text-xs mb-1.5 block" %>
+    <%= f.text_area :purpose, rows: 2, placeholder: "Mô tả mục đích mượn...",
+          class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50 resize-none" %>
+  </div>
+  <div class="flex gap-3 pt-2">
+    <%= link_to "Hủy", borrows_path,
+          class: "flex-1 border border-white/10 text-gray-300 text-sm py-2.5 rounded-lg hover:bg-white/5 transition-colors text-center" %>
+    <%= f.submit borrow.new_record? ? "Xác nhận mượn" : "Cập nhật phiếu mượn",
+          class: "flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm py-2.5 rounded-lg font-medium transition-colors cursor-pointer" %>
+  </div>
+<% end %>

@@ -1,0 +1,149 @@
+<% content_for :title, "Dashboard" %>
+
+<%# ── Page header ─────────────────────────────────────────── %>
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-extrabold text-white">Tổng quan hệ thống</h1>
+    <p class="text-gray-500 text-sm mt-1">
+      <%= l(Date.today, format: "%A, %d tháng %m năm %Y") %> · Phòng máy A, B, C
+    </p>
+  </div>
+  <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-3 py-1.5 rounded-full">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 badge-pulse"></span>
+      Hệ thống hoạt động
+    </div>
+    <%= link_to new_device_path,
+          class: "bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors" do %>
+      + Thêm thiết bị
+    <% end %>
+  </div>
+</div>
+
+<%# ── Stat cards ───────────────────────────────────────────── %>
+<div class="grid grid-cols-4 gap-5 mb-8">
+  <%
+    stats = [
+      { label: "Tổng thiết bị",     value: @total_devices,    color: "indigo",  badge: "+3 tháng này",  badge_color: "emerald", icon: "monitor" },
+      { label: "Đang hoạt động",    value: @active_devices,   color: "emerald", badge: "#{@active_pct}%", badge_color: "emerald", icon: "check-circle" },
+      { label: "Thiết bị đang mượn", value: @borrowed_devices, color: "amber",   badge: "Đang mượn",     badge_color: "amber",   icon: "clock" },
+      { label: "Thiết bị hỏng",     value: @broken_devices,   color: "red",     badge: "Cần xử lý",     badge_color: "red",     icon: "alert" }
+    ]
+  %>
+  <% stats.each do |s| %>
+    <div class="bg-[#1e2030] card-glow rounded-2xl p-5" style="background: linear-gradient(135deg,#1e2030,#161824)">
+      <div class="flex items-start justify-between mb-4">
+        <div class="w-10 h-10 rounded-xl bg-<%= s[:color] %>-500/20 flex items-center justify-center">
+          <% if s[:icon] == "monitor" %>
+            <svg class="w-5 h-5 text-<%= s[:color] %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" stroke-width="2"/><path d="M8 21h8M12 17v4" stroke-width="2" stroke-linecap="round"/></svg>
+          <% elsif s[:icon] == "check-circle" %>
+            <svg class="w-5 h-5 text-<%= s[:color] %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" stroke-width="2"/></svg>
+          <% elsif s[:icon] == "clock" %>
+            <svg class="w-5 h-5 text-<%= s[:color] %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round"/></svg>
+          <% else %>
+            <svg class="w-5 h-5 text-<%= s[:color] %>-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke-width="2" stroke-linecap="round"/></svg>
+          <% end %>
+        </div>
+        <span class="text-<%= s[:badge_color] %>-400 text-xs bg-<%= s[:badge_color] %>-400/10 px-2 py-0.5 rounded-full"><%= s[:badge] %></span>
+      </div>
+      <p class="text-3xl font-extrabold text-white"><%= s[:value] %></p>
+      <p class="text-gray-500 text-sm mt-1"><%= s[:label] %></p>
+    </div>
+  <% end %>
+</div>
+
+<%# ── Charts row ──────────────────────────────────────────── %>
+<div class="grid grid-cols-3 gap-6 mb-6">
+
+  <%# Bar chart: devices per room %>
+  <div class="col-span-2 bg-[#1a1d2e] card-glow rounded-2xl p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-white font-bold">Phân loại thiết bị theo phòng</h2>
+    </div>
+    <div class="space-y-4">
+      <% max_count = [@devices_by_room.map { |r| r[:count] }.max, 1].max %>
+      <% @devices_by_room.each_with_index do |row, i| %>
+        <% pct = (row[:count].to_f / max_count * 100).round %>
+        <div>
+          <div class="flex justify-between text-xs text-gray-500 mb-1.5">
+            <span><%= row[:room] %></span>
+            <span><%= row[:count] %> thiết bị</span>
+          </div>
+          <div class="h-2.5 bg-white/5 rounded-full overflow-hidden">
+            <div class="h-full bg-indigo-500 rounded-full" style="width:<%= pct %>%; transition: width 1s ease;"></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Donut: status overview %>
+  <div class="bg-[#1a1d2e] card-glow rounded-2xl p-6">
+    <h2 class="text-white font-bold mb-5">Tình trạng tổng quát</h2>
+    <div class="flex justify-center mb-5">
+      <%
+        circumference = 2 * Math::PI * 50   # ~314
+        active_dash   = (circumference * @active_pct / 100).round(1)
+        rest_dash     = (circumference - active_dash).round(1)
+      %>
+      <svg viewBox="0 0 120 120" class="w-32 h-32">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#1e2030" stroke-width="14"/>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#6366f1" stroke-width="14"
+                stroke-dasharray="<%= active_dash %> <%= rest_dash %>"
+                transform="rotate(-90 60 60)"/>
+        <text x="60" y="55" text-anchor="middle" fill="white" font-size="22" font-weight="800"><%= @active_pct %>%</text>
+        <text x="60" y="70" text-anchor="middle" fill="#6b7280" font-size="8">hoạt động</text>
+      </svg>
+    </div>
+    <div class="space-y-3 text-sm">
+      <% [
+           ["Hoạt động",   @status_counts[:active],      "indigo"],
+           ["Đang mượn",   @status_counts[:borrowed],    "amber"],
+           ["Hỏng / Bảo trì", @status_counts[:broken],  "red"],
+           ["Không xác định", @status_counts[:maintenance], "gray"]
+         ].each do |label, count, color| %>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-<%= color %>-500"></span>
+            <span class="text-gray-400"><%= label %></span>
+          </div>
+          <span class="text-white font-semibold"><%= count %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# ── Recent activity ─────────────────────────────────────── %>
+<div class="bg-[#1a1d2e] card-glow rounded-2xl p-6">
+  <div class="flex items-center justify-between mb-5">
+    <h2 class="text-white font-bold">Hoạt động gần đây</h2>
+    <%= link_to "Xem tất cả →", borrows_path, class: "text-indigo-400 text-sm hover:text-indigo-300" %>
+  </div>
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-gray-600 text-xs uppercase tracking-wider border-b border-white/5">
+        <th class="text-left pb-3">Thiết bị</th>
+        <th class="text-left pb-3">Người mượn</th>
+        <th class="text-left pb-3">Thời gian</th>
+        <th class="text-left pb-3">Trạng thái</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-white/5">
+      <% if @recent_borrows.any? %>
+        <% @recent_borrows.each do |borrow| %>
+          <tr class="text-gray-300">
+            <td class="py-3"><%= borrow.device.name %> (<%= borrow.device.code %>)</td>
+            <td class="py-3 text-gray-400"><%= borrow.borrower_name %></td>
+            <td class="py-3 text-gray-500"><%= vn_datetime(borrow.borrowed_at) %></td>
+            <td class="py-3"><%= status_badge(borrow.status_label, borrow.status_color) %></td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="4" class="py-8 text-center text-gray-600">Chưa có hoạt động nào.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
