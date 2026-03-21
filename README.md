@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # PhòngMáy Pro – Hệ thống Quản lý Thiết bị Phòng Máy
 
 Rails 7 application chuyển đổi từ 5 HTML views sang full MVC.
@@ -111,3 +112,6 @@ bundle add devise
 # Excel export  
 bundle add caxlsx-rails
 ```
+=======
+# qlpm
+>>>>>>> 4437741378f27b9cb8e28d04048bb3d18757065b
