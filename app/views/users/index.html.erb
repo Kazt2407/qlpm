@@ -1,0 +1,31 @@
+<% content_for :title, "Người dùng" %>
+
+<div class="mb-8">
+  <h1 class="text-3xl font-extrabold text-slate-900">Người dùng và phân quyền</h1>
+  <p class="mt-2 text-sm text-slate-500">Tách riêng admin với teacher/student theo cơ sở dữ liệu mới.</p>
+</div>
+
+<div class="shell-card overflow-hidden rounded-3xl border border-slate-200/70">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
+      <tr>
+        <th class="px-4 py-3">Họ tên</th>
+        <th class="px-4 py-3">Email</th>
+        <th class="px-4 py-3">Role</th>
+        <th class="px-4 py-3">User type</th>
+        <th class="px-4 py-3">Đơn vị</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100 bg-white">
+      <% @users.each do |user| %>
+        <tr>
+          <td class="px-4 py-3 font-semibold text-slate-900"><%= user.full_name %></td>
+          <td class="px-4 py-3 text-slate-600"><%= user.email %></td>
+          <td class="px-4 py-3"><%= status_badge(user.role, user.admin? ? "blue" : "sky") %></td>
+          <td class="px-4 py-3 text-slate-600"><%= user.user_type %></td>
+          <td class="px-4 py-3 text-slate-600"><%= user.department %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

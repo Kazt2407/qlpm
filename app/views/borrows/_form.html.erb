@@ -1,51 +1,85 @@
-<%# app/views/borrows/_form.html.erb %>
-<%= form_with model: borrow, local: true, class: "space-y-4" do |f| %>
+<%= form_with model: borrow, class: "space-y-5" do |f| %>
   <% if borrow.errors.any? %>
-    <div class="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
-      <ul class="list-disc list-inside space-y-1">
-        <% borrow.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
-      </ul>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <% borrow.errors.full_messages.each do |msg| %>
+        <div><%= msg %></div>
+      <% end %>
     </div>
   <% end %>
 
   <div>
-    <%= f.label :device_id, "Thiết bị mượn", class: "text-gray-400 text-xs mb-1.5 block" %>
-    <%= f.select :device_id,
-          [["-- Chọn thiết bị --", ""]] + available_devices.map { |d| ["#{d.code} – #{d.name}", d.id] },
-          {},
-          class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+    <%= f.label :asset_id, "Đối tượng sử dụng", class: "mb-2 block text-sm font-medium text-slate-700" %>
+    <%= f.select :asset_id, @available_assets.map { |asset| ["#{asset.code} - #{asset.name}", asset.id] }, { include_blank: "Chọn asset" }, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
   </div>
-  <div>
-    <%= f.label :borrower_name, "Người mượn", class: "text-gray-400 text-xs mb-1.5 block" %>
-    <%= f.text_field :borrower_name, placeholder: "Họ và tên...",
-          class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
-  </div>
-  <div>
-    <%= f.label :borrower_class, "Lớp / Chức vụ", class: "text-gray-400 text-xs mb-1.5 block" %>
-    <%= f.text_field :borrower_class, placeholder: "VD: Lớp 10A1 hoặc Giáo viên",
-          class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
-  </div>
-  <div class="grid grid-cols-2 gap-4">
+
+  <% if current_user.admin? %>
+    <div class="grid gap-5 md:grid-cols-2">
+      <div>
+        <%= f.label :borrow_source, "Nguồn tạo", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.select :borrow_source, Borrow::SOURCES, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+      <div>
+        <%= f.label :borrower_type, "Nhóm người mượn", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.select :borrower_type, Borrow::BORROWER_TYPES, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+    </div>
+
+    <div class="grid gap-5 md:grid-cols-3">
+      <div>
+        <%= f.label :borrower_name, "Tên người mượn", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.text_field :borrower_name, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+      <div>
+        <%= f.label :borrower_identifier, "Mã định danh", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.text_field :borrower_identifier, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+      <div>
+        <%= f.label :borrower_group, "Lớp / bộ môn", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.text_field :borrower_group, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+    </div>
+  <% else %>
+    <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+      Yêu cầu sẽ tự gắn với tài khoản hiện tại: <span class="font-semibold text-slate-900"><%= current_user.full_name %></span>.
+    </div>
+  <% end %>
+
+  <div class="grid gap-5 md:grid-cols-2">
     <div>
-      <%= f.label :borrowed_at, "Ngày mượn", class: "text-gray-400 text-xs mb-1.5 block" %>
-      <%= f.date_field :borrowed_at,
-            class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+      <%= f.label :starts_at, "Bắt đầu", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.datetime_local_field :starts_at, value: borrow.starts_at&.strftime("%Y-%m-%dT%H:%M"), class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     </div>
     <div>
-      <%= f.label :due_at, "Hạn trả", class: "text-gray-400 text-xs mb-1.5 block" %>
-      <%= f.date_field :due_at,
-            class: "w-full bg-[#0f1117] border border-white/10 text-gray-400 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50" %>
+      <%= f.label :ends_at, "Kết thúc", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.datetime_local_field :ends_at, value: borrow.ends_at&.strftime("%Y-%m-%dT%H:%M"), class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     </div>
   </div>
+
+  <% if current_user.admin? %>
+    <div class="grid gap-5 md:grid-cols-2">
+      <div>
+        <%= f.label :approved_by_id, "Người duyệt", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.select :approved_by_id, @approvers.map { |user| [user.full_name, user.id] }, { include_blank: "Chọn admin duyệt" }, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+      <div>
+        <%= f.label :workflow_state, "Workflow", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.select :workflow_state, Borrow::WORKFLOW_STATES, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+    </div>
+  <% end %>
+
   <div>
-    <%= f.label :purpose, "Mục đích sử dụng", class: "text-gray-400 text-xs mb-1.5 block" %>
-    <%= f.text_area :purpose, rows: 2, placeholder: "Mô tả mục đích mượn...",
-          class: "w-full bg-[#0f1117] border border-white/10 text-gray-300 text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-indigo-500/50 resize-none" %>
+    <%= f.label :purpose, "Mục đích", class: "mb-2 block text-sm font-medium text-slate-700" %>
+    <%= f.text_area :purpose, rows: 3, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
   </div>
-  <div class="flex gap-3 pt-2">
-    <%= link_to "Hủy", borrows_path,
-          class: "flex-1 border border-white/10 text-gray-300 text-sm py-2.5 rounded-lg hover:bg-white/5 transition-colors text-center" %>
-    <%= f.submit borrow.new_record? ? "Xác nhận mượn" : "Cập nhật phiếu mượn",
-          class: "flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm py-2.5 rounded-lg font-medium transition-colors cursor-pointer" %>
+
+  <div>
+    <%= f.label :notes, "Ghi chú", class: "mb-2 block text-sm font-medium text-slate-700" %>
+    <%= f.text_area :notes, rows: 3, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+  </div>
+
+  <div class="flex gap-3">
+    <%= link_to "Hủy", borrows_path, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50" %>
+    <%= f.submit borrow.persisted? ? "Cập nhật phiếu" : "Tạo phiếu", class: "rounded-2xl bg-[#124170] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0d3258]" %>
   </div>
 <% end %>

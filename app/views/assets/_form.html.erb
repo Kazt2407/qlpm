@@ -1,0 +1,94 @@
+<%= form_with model: asset, class: "space-y-5" do |f| %>
+  <% if asset.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <% asset.errors.full_messages.each do |msg| %>
+        <div><%= msg %></div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <div>
+      <%= f.label :code, "Mã", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.text_field :code, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :name, "Tên", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.text_field :name, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-3">
+    <div>
+      <%= f.label :asset_type, "Loại đối tượng", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.select :asset_type, Asset::ASSET_TYPES, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :category, "Category", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.select :category, Asset::CATEGORIES, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :status, "Trạng thái", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.select :status, Asset::STATUSES, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <div>
+      <%= f.label :room_id, "Phòng", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.select :room_id, [["Không gắn phòng", ""]] + @rooms.map { |room| [room.name, room.id] }, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :parent_id, "Đối tượng cha", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.select :parent_id, [["Không có", ""]] + @parent_assets.map { |item| ["#{item.code} - #{item.name}", item.id] }, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-3">
+    <div>
+      <%= f.label :brand, "Brand", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.text_field :brand, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :model_code, "Model", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.text_field :model_code, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :serial_number, "Serial", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.text_field :serial_number, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-3">
+    <div>
+      <%= f.label :imported_at, "Ngày nhập", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.date_field :imported_at, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :warranty_until, "Bảo hành", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.date_field :warranty_until, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :desk_number, "Số bàn", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.number_field :desk_number, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <%= f.text_field :cpu, placeholder: "CPU", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.text_field :ram, placeholder: "RAM", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.text_field :storage, placeholder: "Storage", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.text_field :os, placeholder: "OS", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.text_field :ip_address, placeholder: "IP address", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm md:col-span-2" %>
+  </div>
+
+  <div>
+    <%= f.label :notes, "Ghi chú", class: "mb-2 block text-sm font-medium text-slate-700" %>
+    <%= f.text_area :notes, rows: 4, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+  </div>
+
+  <div class="flex gap-3">
+    <%= link_to "Hủy", assets_path, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50" %>
+    <%= f.submit asset.persisted? ? "Cập nhật" : "Tạo mới", class: "rounded-2xl bg-[#124170] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0d3258]" %>
+  </div>
+<% end %>

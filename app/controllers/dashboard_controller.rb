@@ -1,26 +1,27 @@
 class DashboardController < ApplicationController
   def index
-    # Stat cards
-    @total_devices    = Device.count
-    @active_devices   = Device.active.count
-    @borrowed_devices = Device.borrowed.count
-    @broken_devices   = Device.broken.count
+    @total_assets = Asset.count
+    @total_rooms = Room.count
+    @active_assets = Asset.where(status: "active").count
+    @borrowed_assets = Asset.where(status: %w[borrowed in_use]).count
+    @maintenance_assets = Asset.where(status: %w[broken maintenance]).count
+    @active_pct = @total_assets.positive? ? (@active_assets.to_f / @total_assets * 100).round(1) : 0
 
-    # Bar chart: devices per room
-    @devices_by_room = Device::ROOMS.map do |room|
-      { room: room, count: Device.by_room(room).count }
+    @assets_by_room = Room.includes(:assets).order(:name).map do |room|
+      {
+        room: room.name,
+        count: room.assets.count,
+        active: room.assets.where(status: "active").count
+      }
     end
 
-    # Donut chart data
-    @status_counts = {
-      active:      @active_devices,
-      borrowed:    @borrowed_devices,
-      broken:      @broken_devices,
-      maintenance: Device.maintenance.count
+    @borrow_mix = {
+      student: Borrow.where(borrower_type: "student").count,
+      teacher: Borrow.where(borrower_type: "teacher").count,
+      system: Borrow.where(borrower_type: "system").count
     }
-    @active_pct = @total_devices.positive? ? (@active_devices.to_f / @total_devices * 100).round(1) : 0
 
-    # Recent activity (last 10 borrow records)
-    @recent_borrows = Borrow.includes(:device).recent.limit(10)
+    scope = current_user.admin? ? Borrow.includes(:asset).recent : Borrow.includes(:asset).where(created_by: current_user).recent
+    @recent_borrows = scope.limit(8)
   end
 end

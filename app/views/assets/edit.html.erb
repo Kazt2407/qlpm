@@ -1,0 +1,11 @@
+<% content_for :title, "Cập nhật đối tượng" %>
+
+<div class="mx-auto max-w-5xl">
+  <div class="mb-6">
+    <h1 class="text-3xl font-extrabold text-slate-900">Cập nhật <%= @asset.code %></h1>
+    <p class="mt-2 text-sm text-slate-500">Điều chỉnh thông tin cho room, computer, hoặc device.</p>
+  </div>
+  <div class="shell-card rounded-3xl border border-slate-200/70 p-6">
+    <%= render "form", asset: @asset %>
+  </div>
+</div>

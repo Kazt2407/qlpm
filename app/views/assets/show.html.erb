@@ -1,0 +1,87 @@
+<% content_for :title, @asset.code %>
+
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <p class="text-sm text-slate-500"><%= link_to "Đối tượng sử dụng", assets_path, class: "hover:text-[#124170]" %> / <%= @asset.code %></p>
+    <h1 class="mt-3 text-3xl font-extrabold text-slate-900"><%= @asset.name %></h1>
+  </div>
+  <div class="flex gap-3">
+    <%= status_badge(@asset.status_label, @asset.status_color) %>
+    <% if current_user.admin? %>
+      <%= link_to "Chỉnh sửa", edit_asset_path(@asset), class: "rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="grid gap-6 xl:grid-cols-3">
+  <div class="shell-card rounded-3xl border border-slate-200/70 p-6">
+    <h2 class="text-lg font-bold text-slate-900">Thông tin chính</h2>
+    <div class="mt-5 space-y-3 text-sm">
+      <div class="flex justify-between"><span class="text-slate-500">Loại</span><span class="font-medium text-slate-800"><%= @asset.asset_type_label %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Category</span><span class="font-medium text-slate-800"><%= @asset.category %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Phòng</span><span class="font-medium text-slate-800"><%= @asset.room_name || "–" %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Đối tượng cha</span><span class="font-medium text-slate-800"><%= @asset.parent&.code || "–" %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Model</span><span class="font-medium text-slate-800"><%= @asset.model_code.presence || "–" %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Serial</span><span class="font-medium text-slate-800"><%= @asset.serial_number.presence || "–" %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">IP</span><span class="font-medium text-slate-800"><%= @asset.ip_address.presence || "–" %></span></div>
+    </div>
+
+    <% if @asset.notes.present? %>
+      <div class="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+        <p class="font-medium text-slate-800">Ghi chú</p>
+        <p class="mt-2"><%= @asset.notes %></p>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="shell-card rounded-3xl border border-slate-200/70 p-6 xl:col-span-2">
+    <div class="mb-5 flex items-center justify-between">
+      <h2 class="text-lg font-bold text-slate-900">Lịch sử mượn và sử dụng</h2>
+      <%= link_to "Tạo phiếu mượn", new_borrow_path(asset_id: @asset.id), class: "rounded-2xl bg-[#124170] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0d3258]" %>
+    </div>
+    <div class="overflow-hidden rounded-2xl border border-slate-200">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Người mượn</th>
+            <th class="px-4 py-3">Nguồn</th>
+            <th class="px-4 py-3">Thời gian</th>
+            <th class="px-4 py-3">Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white">
+          <% @borrow_history.each do |borrow| %>
+            <tr>
+              <td class="px-4 py-3">
+                <div class="font-semibold text-slate-900"><%= borrow.borrower_name %></div>
+                <div class="text-xs text-slate-500"><%= borrow.borrower_group.presence || borrow.borrower_type %></div>
+              </td>
+              <td class="px-4 py-3 text-slate-600"><%= borrow.borrow_source %></td>
+              <td class="px-4 py-3 text-slate-600"><%= vn_datetime(borrow.starts_at) %> - <%= vn_datetime(borrow.ends_at) %></td>
+              <td class="px-4 py-3"><%= status_badge(borrow.status_label, borrow.status_color) %></td>
+            </tr>
+          <% end %>
+          <% if @borrow_history.empty? %>
+            <tr>
+              <td colspan="4" class="px-4 py-10 text-center text-slate-500">Chưa có lịch sử cho đối tượng này.</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if @child_assets.any? %>
+      <div class="mt-6">
+        <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Đối tượng con</h3>
+        <div class="mt-3 grid gap-3 md:grid-cols-2">
+          <% @child_assets.each do |child| %>
+            <%= link_to asset_path(child), class: "rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 hover:bg-slate-100" do %>
+              <div class="font-semibold text-slate-900"><%= child.code %></div>
+              <div class="text-sm text-slate-500"><%= child.name %></div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

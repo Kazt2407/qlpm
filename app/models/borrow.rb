@@ -1,64 +1,91 @@
 class Borrow < ApplicationRecord
-  belongs_to :device
+  belongs_to :asset
+  belongs_to :created_by, class_name: "User", optional: true
+  belongs_to :approved_by, class_name: "User", optional: true
 
-  STATUSES = %w[borrowing returned overdue].freeze
+  SOURCES = %w[manual_request imported_schedule].freeze
+  BORROWER_TYPES = %w[system teacher student].freeze
+  WORKFLOW_STATES = %w[pending approved rejected active returned cancelled overdue].freeze
 
   validates :borrower_name, presence: true
-  validates :borrower_class, presence: true
-  validates :borrowed_at,   presence: true
-  validates :due_at,        presence: true
-  validate  :due_at_after_borrowed_at
-  validate  :device_available_for_open_borrow
+  validates :borrow_source, inclusion: { in: SOURCES }
+  validates :borrower_type, inclusion: { in: BORROWER_TYPES }
+  validates :workflow_state, inclusion: { in: WORKFLOW_STATES }
+  validates :starts_at, presence: true
+  validates :ends_at, presence: true
+  validate  :ends_at_after_starts_at
+  validate  :asset_available_for_time_window
 
-  scope :borrowing, -> { where(returned_at: nil).where("due_at >= ?", Date.today) }
-  scope :returned,  -> { where.not(returned_at: nil) }
-  scope :overdue,   -> { where(returned_at: nil).where("due_at < ?", Date.today) }
-  scope :recent,    -> { order(borrowed_at: :desc) }
-  scope :this_month, -> { where(borrowed_at: Date.current.beginning_of_month..) }
+  scope :active,   -> { where(returned_at: nil, workflow_state: %w[approved active]).where("ends_at >= ?", Time.current) }
+  scope :returned, -> { where.not(returned_at: nil) }
+  scope :overdue,  -> { where(returned_at: nil, workflow_state: %w[approved active]).where("ends_at < ?", Time.current) }
+  scope :recent,   -> { order(starts_at: :desc) }
+  scope :this_month, -> { where(starts_at: Time.current.beginning_of_month..) }
 
   def status
+    return "cancelled" if workflow_state == "cancelled"
+    return "rejected" if workflow_state == "rejected"
+    return "pending" if workflow_state == "pending"
     return "returned" if returned_at.present?
-    return "overdue"  if due_at < Date.today
-    "borrowing"
+    return "overdue" if ends_at < Time.current
+    "active"
   end
 
   def status_label
-    { "borrowing" => "Đang mượn", "returned" => "Đã trả", "overdue" => "Quá hạn" }[status]
+    {
+      "pending" => "Chờ duyệt",
+      "active" => "Đang mượn",
+      "returned" => "Đã trả",
+      "overdue" => "Quá hạn",
+      "cancelled" => "Đã hủy",
+      "rejected" => "Từ chối"
+    }[status]
   end
 
   def status_color
-    { "borrowing" => "amber", "returned" => "emerald", "overdue" => "red" }[status]
+    {
+      "pending" => "sky",
+      "active" => "amber",
+      "returned" => "emerald",
+      "overdue" => "red",
+      "cancelled" => "gray",
+      "rejected" => "rose"
+    }[status]
   end
 
   def days_overdue
     return 0 unless overdue?
-    (Date.today - due_at.to_date).to_i
+    ((Time.current - ends_at) / 1.day).ceil
   end
 
   def overdue?
-    returned_at.nil? && due_at < Date.today
+    returned_at.nil? && ends_at < Time.current
   end
 
   def confirm_return!
     transaction do
-      update!(returned_at: Time.current)
-      device.update!(status: "active")
+      update!(returned_at: Time.current, workflow_state: "returned")
+      asset.update!(status: "active") if asset.status.in?(%w[borrowed in_use])
     end
   end
 
   private
 
-  def due_at_after_borrowed_at
-    return unless borrowed_at && due_at
-    errors.add(:due_at, "phải sau ngày mượn") if due_at < borrowed_at
+  def ends_at_after_starts_at
+    return unless starts_at && ends_at
+    errors.add(:ends_at, "phải sau thời gian bắt đầu") if ends_at <= starts_at
   end
 
-  def device_available_for_open_borrow
-    return if returned_at.present? || device.blank?
+  def asset_available_for_time_window
+    return if returned_at.present? || asset.blank? || starts_at.blank? || ends_at.blank?
 
-    open_borrows = device.borrows.where(returned_at: nil).where.not(id: id)
-    return unless open_borrows.exists? || !device.status.in?(%w[active borrowed])
+    overlapping = asset.borrows
+                       .where.not(id: id)
+                       .where(returned_at: nil)
+                       .where.not(workflow_state: %w[cancelled rejected returned])
+                       .where("starts_at < ? AND ends_at > ?", ends_at, starts_at)
+    return unless overlapping.exists?
 
-    errors.add(:device_id, "đang có phiếu mượn chưa trả")
+    errors.add(:asset_id, "đã có lịch sử dụng trùng thời gian")
   end
 end

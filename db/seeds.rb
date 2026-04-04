@@ -1,49 +1,260 @@
-# db/seeds.rb – Sample data for PhòngMáy Pro
-puts "Seeding database..."
+puts "Seeding rebuilt database..."
 
-Device.destroy_all
-Borrow.destroy_all
+Borrow.delete_all
+Asset.delete_all
+Room.delete_all
+User.delete_all
 
-# ── Devices ──────────────────────────────────────────────────
-devices_data = [
-  # Phòng A – Máy tính
-  { code: "PC-A-001", name: "Máy tính Dell OptiPlex", device_type: "Máy tính", room: "Phòng A", brand: "Dell", device_name: "OptiPlex 3080", desk_number: 1, imported_at: "2024-01-12", warranty_until: "2027-01-12", status: "active", cpu: "Intel Core i5-10400", ram: "8 GB DDR4", storage: "256 GB SSD", os: "Windows 10 Pro", ip_address: "192.168.1.101" },
-  { code: "PC-A-002", name: "Máy tính Dell OptiPlex", device_type: "Máy tính", room: "Phòng A", brand: "Dell", device_name: "OptiPlex 3080", desk_number: 2, imported_at: "2024-01-12", warranty_until: "2027-01-12", status: "borrowed", cpu: "Intel Core i5-10400", ram: "8 GB DDR4", storage: "256 GB SSD", os: "Windows 10 Pro", ip_address: "192.168.1.102" },
-  { code: "PC-A-003", name: "Máy tính Dell OptiPlex", device_type: "Máy tính", room: "Phòng A", brand: "Dell", device_name: "OptiPlex 3080", desk_number: 3, imported_at: "2024-01-12", warranty_until: "2027-01-12", status: "active", ip_address: "192.168.1.103" },
-  # Phòng B
-  { code: "PC-B-001", name: "Máy tính HP ProDesk", device_type: "Máy tính", room: "Phòng B", brand: "HP", device_name: "ProDesk 400 G7", desk_number: 1, imported_at: "2023-06-05", warranty_until: "2026-06-05", status: "active", ip_address: "192.168.2.101" },
-  { code: "PC-B-002", name: "Máy tính HP ProDesk", device_type: "Máy tính", room: "Phòng B", brand: "HP", device_name: "ProDesk 400 G7", desk_number: 2, imported_at: "2023-06-05", warranty_until: "2026-06-05", status: "maintenance", notes: "Lỗi ổ cứng, đang chờ thay thế" },
-  # Chuột
-  { code: "MS-B-005", name: "Chuột Logitech M100", device_type: "Chuột", room: "Phòng B", brand: "Logitech", device_name: "M100", imported_at: "2023-06-05", status: "active" },
-  { code: "MS-B-007", name: "Chuột Logitech M100", device_type: "Chuột", room: "Phòng B", brand: "Logitech", device_name: "M100", imported_at: "2023-06-05", status: "broken", notes: "Cuộn chuột bị hỏng" },
-  # Bàn phím
-  { code: "KB-C-003", name: "Bàn phím VSP KB-150", device_type: "Bàn phím", room: "Phòng C", brand: "VSP", device_name: "KB-150", imported_at: "2023-09-18", status: "active" },
-  { code: "KB-C-008", name: "Bàn phím VSP KB-150", device_type: "Bàn phím", room: "Phòng C", brand: "VSP", device_name: "KB-150", imported_at: "2023-09-18", status: "active" },
-  # Màn hình
-  { code: "MN-A-004", name: 'Màn hình LG 22" FHD', device_type: "Màn hình", room: "Phòng A", brand: "LG", device_name: '22MK400H', desk_number: 4, imported_at: "2024-01-12", warranty_until: "2026-01-12", status: "maintenance" },
-  { code: "MN-A-007", name: 'Màn hình LG 22" FHD', device_type: "Màn hình", room: "Phòng A", brand: "LG", device_name: '22MK400H', desk_number: 7, imported_at: "2024-01-12", warranty_until: "2026-01-12", status: "active" },
-  # Dây mạng
-  { code: "NET-A-001", name: "Dây mạng CAT6", device_type: "Dây mạng", room: "Phòng A", brand: "AMP", imported_at: "2024-01-12", status: "active" },
-]
+users = {
+  admin: User.create!(
+    full_name: "Quản trị hệ thống",
+    email: "admin@school.edu.vn",
+    role: "admin",
+    user_type: "admin",
+    password: "password123",
+    identifier: "ADM-001",
+    department: "CNTT"
+  ),
+  teacher: User.create!(
+    full_name: "Trần Thị Bình",
+    email: "binh.teacher@school.edu.vn",
+    role: "user",
+    user_type: "teacher",
+    password: "password123",
+    identifier: "GV-TIN-001",
+    department: "Tổ Tin học"
+  ),
+  student: User.create!(
+    full_name: "Nguyễn Văn An",
+    email: "an.student@school.edu.vn",
+    role: "user",
+    user_type: "student",
+    password: "password123",
+    identifier: "10A1-001",
+    department: "Lớp 10A1"
+  )
+}
 
-devices = devices_data.map { |d| Device.create!(d) }
-puts "  Created #{Device.count} devices"
+puts "  Created #{User.count} users"
 
-# ── Borrows ───────────────────────────────────────────────────
-pc_a_002 = Device.find_by(code: "PC-A-002")
-ms_b_005 = Device.find_by(code: "MS-B-005")
-kb_c_008 = Device.find_by(code: "KB-C-008")
-mn_a_007 = Device.find_by(code: "MN-A-007")
+rooms = {
+  a: Room.create!(
+    code: "LAB-A",
+    name: "Phòng A",
+    room_type: "computer_room",
+    status: "active",
+    capacity: 40,
+    location: "Tầng 2 dãy A"
+  ),
+  b: Room.create!(
+    code: "LAB-B",
+    name: "Phòng B",
+    room_type: "computer_room",
+    status: "active",
+    capacity: 35,
+    location: "Tầng 2 dãy B"
+  ),
+  c: Room.create!(
+    code: "LAB-C",
+    name: "Phòng C",
+    room_type: "computer_room",
+    status: "maintenance",
+    capacity: 30,
+    location: "Tầng 3 dãy A",
+    notes: "Đang cải tạo hệ thống điện"
+  )
+}
 
-[
-  # Currently borrowing
-  { device: pc_a_002, borrower_name: "Nguyễn Văn An", borrower_class: "Lớp 10A1", borrowed_at: 1.day.ago, due_at: Date.tomorrow, purpose: "Học bù buổi chiều lớp 10A1" },
-  # Returned
-  { device: ms_b_005, borrower_name: "Trần Thị Bình", borrower_class: "Giáo viên Tin học", borrowed_at: 2.days.ago, due_at: 1.day.ago, returned_at: 1.day.ago.change(hour: 13, min: 15), purpose: "Chuẩn bị bài giảng" },
-  { device: mn_a_007, borrower_name: "Phạm Quốc Duy", borrower_class: "Lớp 12C3", borrowed_at: 3.days.ago, due_at: 2.days.ago, returned_at: 2.days.ago.change(hour: 16, min: 45) },
-  # Overdue
-  { device: kb_c_008, borrower_name: "Lê Minh Châu", borrower_class: "Lớp 11B2", borrowed_at: 5.days.ago, due_at: 4.days.ago, purpose: "Ôn thi học kỳ" },
-].each { |b| Borrow.create!(b) }
+puts "  Created #{Room.count} rooms"
+
+assets = {}
+
+assets[:room_a] = Asset.create!(
+  code: "ASSET-LAB-A",
+  name: "Phòng máy A",
+  asset_type: "room",
+  category: "computer_room",
+  room: rooms[:a],
+  status: "active",
+  notes: "Dùng cho lịch thực hành theo thời khóa biểu"
+)
+
+assets[:room_b] = Asset.create!(
+  code: "ASSET-LAB-B",
+  name: "Phòng máy B",
+  asset_type: "room",
+  category: "computer_room",
+  room: rooms[:b],
+  status: "active"
+)
+
+assets[:pc_a_01] = Asset.create!(
+  code: "PC-A-001",
+  name: "Máy tính Dell OptiPlex A01",
+  asset_type: "computer",
+  category: "computer",
+  room: rooms[:a],
+  parent: assets[:room_a],
+  status: "active",
+  brand: "Dell",
+  model_code: "OptiPlex 3080",
+  serial_number: "DL-A01-2024",
+  imported_at: Date.new(2024, 1, 12),
+  warranty_until: Date.new(2027, 1, 12),
+  desk_number: 1,
+  cpu: "Intel Core i5-10400",
+  ram: "8 GB DDR4",
+  storage: "256 GB SSD",
+  os: "Windows 10 Pro",
+  ip_address: "192.168.1.101"
+)
+
+assets[:pc_a_02] = Asset.create!(
+  code: "PC-A-002",
+  name: "Máy tính Dell OptiPlex A02",
+  asset_type: "computer",
+  category: "computer",
+  room: rooms[:a],
+  parent: assets[:room_a],
+  status: "borrowed",
+  brand: "Dell",
+  model_code: "OptiPlex 3080",
+  serial_number: "DL-A02-2024",
+  imported_at: Date.new(2024, 1, 12),
+  warranty_until: Date.new(2027, 1, 12),
+  desk_number: 2,
+  cpu: "Intel Core i5-10400",
+  ram: "8 GB DDR4",
+  storage: "256 GB SSD",
+  os: "Windows 10 Pro",
+  ip_address: "192.168.1.102"
+)
+
+assets[:pc_b_01] = Asset.create!(
+  code: "PC-B-001",
+  name: "Máy tính HP ProDesk B01",
+  asset_type: "computer",
+  category: "computer",
+  room: rooms[:b],
+  parent: assets[:room_b],
+  status: "active",
+  brand: "HP",
+  model_code: "ProDesk 400 G7",
+  serial_number: "HP-B01-2023",
+  imported_at: Date.new(2023, 6, 5),
+  warranty_until: Date.new(2026, 6, 5),
+  desk_number: 1,
+  cpu: "Intel Core i5-10500",
+  ram: "8 GB DDR4",
+  storage: "512 GB SSD",
+  os: "Windows 11 Pro",
+  ip_address: "192.168.2.101"
+)
+
+assets[:mouse_b_05] = Asset.create!(
+  code: "MS-B-005",
+  name: "Chuột Logitech M100",
+  asset_type: "device",
+  category: "mouse",
+  room: rooms[:b],
+  status: "active",
+  brand: "Logitech",
+  model_code: "M100",
+  serial_number: "LOGI-M100-05",
+  imported_at: Date.new(2023, 6, 5)
+)
+
+assets[:keyboard_c_08] = Asset.create!(
+  code: "KB-C-008",
+  name: "Bàn phím VSP KB-150",
+  asset_type: "device",
+  category: "keyboard",
+  room: rooms[:c],
+  status: "borrowed",
+  brand: "VSP",
+  model_code: "KB-150",
+  serial_number: "VSP-KB-08",
+  imported_at: Date.new(2023, 9, 18)
+)
+
+assets[:monitor_a_07] = Asset.create!(
+  code: "MN-A-007",
+  name: "Màn hình LG 22 FHD",
+  asset_type: "device",
+  category: "monitor",
+  room: rooms[:a],
+  status: "active",
+  brand: "LG",
+  model_code: "22MK400H",
+  serial_number: "LG-MN-07",
+  imported_at: Date.new(2024, 1, 12),
+  warranty_until: Date.new(2026, 1, 12),
+  desk_number: 7
+)
+
+puts "  Created #{Asset.count} assets"
+
+Borrow.create!(
+  asset: assets[:pc_a_02],
+  created_by: users[:student],
+  approved_by: users[:admin],
+  borrow_source: "manual_request",
+  borrower_type: "student",
+  borrower_name: "Nguyễn Văn An",
+  borrower_identifier: "10A1-001",
+  borrower_group: "Lớp 10A1",
+  starts_at: 1.day.ago.change(hour: 13, min: 0),
+  ends_at: Time.current.change(hour: 17, min: 0),
+  workflow_state: "active",
+  purpose: "Học bù buổi chiều"
+)
+
+Borrow.create!(
+  asset: assets[:mouse_b_05],
+  created_by: users[:teacher],
+  approved_by: users[:admin],
+  borrow_source: "manual_request",
+  borrower_type: "teacher",
+  borrower_name: "Trần Thị Bình",
+  borrower_identifier: "GV-TIN-001",
+  borrower_group: "Tổ Tin học",
+  starts_at: 2.days.ago.change(hour: 8, min: 0),
+  ends_at: 1.day.ago.change(hour: 11, min: 30),
+  returned_at: 1.day.ago.change(hour: 11, min: 15),
+  workflow_state: "returned",
+  purpose: "Chuẩn bị bài giảng"
+)
+
+Borrow.create!(
+  asset: assets[:keyboard_c_08],
+  created_by: users[:student],
+  approved_by: users[:admin],
+  borrow_source: "manual_request",
+  borrower_type: "student",
+  borrower_name: "Lê Minh Châu",
+  borrower_identifier: "11B2-014",
+  borrower_group: "Lớp 11B2",
+  starts_at: 5.days.ago.change(hour: 9, min: 0),
+  ends_at: 4.days.ago.change(hour: 16, min: 0),
+  workflow_state: "active",
+  purpose: "Ôn thi học kỳ"
+)
+
+Borrow.create!(
+  asset: assets[:room_a],
+  approved_by: users[:admin],
+  borrow_source: "imported_schedule",
+  borrower_type: "system",
+  borrower_name: "Hệ thống xếp lịch",
+  borrower_identifier: "SHEET-2026-W14",
+  borrower_group: "Lớp 12C3",
+  starts_at: 1.day.from_now.change(hour: 7, min: 0),
+  ends_at: 1.day.from_now.change(hour: 9, min: 30),
+  workflow_state: "approved",
+  purpose: "Tiết thực hành theo file lịch phòng máy",
+  import_batch: "schedule_2026_week_14.xlsx",
+  import_row_number: 12
+)
 
 puts "  Created #{Borrow.count} borrows"
-puts "Done! ✓"
+puts "Done! Database rebuilt successfully."

@@ -1,16 +1,11 @@
-<% content_for :title, "Sửa phiếu mượn ##{@borrow.id}" %>
+<% content_for :title, "Cập nhật phiếu mượn" %>
 
-<div class="max-w-2xl mx-auto">
-  <div class="flex items-center gap-2 text-sm text-gray-500 mb-6">
-    <%= link_to "Mượn – Trả", borrows_path, class: "hover:text-indigo-400 transition-colors" %>
-    <span>›</span>
-    <%= link_to "Phiếu ##{@borrow.id}", borrow_path(@borrow), class: "hover:text-indigo-400 transition-colors" %>
-    <span>›</span>
-    <span class="text-gray-300">Chỉnh sửa</span>
+<div class="mx-auto max-w-5xl">
+  <div class="mb-6">
+    <h1 class="text-3xl font-extrabold text-slate-900">Cập nhật phiếu #BR-<%= @borrow.id.to_s.rjust(5, "0") %></h1>
+    <p class="mt-2 text-sm text-slate-500">Điều chỉnh trạng thái, thời gian, hoặc người mượn cho phiếu hiện tại.</p>
   </div>
-
-  <div class="bg-[#1a1d2e] card-glow rounded-2xl p-6">
-    <h1 class="text-xl font-bold text-white mb-6">Cập nhật phiếu mượn</h1>
-    <%= render "form", borrow: @borrow, available_devices: @available_devices %>
+  <div class="shell-card rounded-3xl border border-slate-200/70 p-6">
+    <%= render "form", borrow: @borrow %>
   </div>
 </div>

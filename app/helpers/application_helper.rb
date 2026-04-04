@@ -8,21 +8,26 @@ module ApplicationHelper
   # Returns Tailwind color classes for a given color name
   def status_bg(color)
     {
-      "emerald" => "bg-emerald-400/10 text-emerald-400",
-      "amber"   => "bg-amber-400/10 text-amber-400",
-      "red"     => "bg-red-400/10 text-red-400",
-      "gray"    => "bg-gray-400/10 text-gray-400",
-      "blue"    => "bg-blue-400/10 text-blue-400"
-    }[color.to_s] || "bg-gray-400/10 text-gray-400"
+      "emerald" => "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+      "amber"   => "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+      "red"     => "bg-red-50 text-red-700 ring-1 ring-red-200",
+      "gray"    => "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+      "blue"    => "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+      "sky"     => "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
+      "slate"   => "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
+    }[color.to_s] || "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
   end
 
   def dot_color(color)
     {
-      "emerald" => "bg-emerald-400",
-      "amber"   => "bg-amber-400",
-      "red"     => "bg-red-400",
-      "gray"    => "bg-gray-400"
-    }[color.to_s] || "bg-gray-400"
+      "emerald" => "bg-emerald-500",
+      "amber"   => "bg-amber-500",
+      "red"     => "bg-red-500",
+      "gray"    => "bg-slate-500",
+      "blue"    => "bg-blue-500",
+      "sky"     => "bg-sky-500",
+      "slate"   => "bg-slate-500"
+    }[color.to_s] || "bg-slate-500"
   end
 
   # Render a status badge span
@@ -47,5 +52,11 @@ module ApplicationHelper
   def pct_width(value, total)
     return "0%" if total.zero?
     "#{[(value.to_f / total * 100).round, 100].min}%"
+  end
+
+  def nav_link_classes(key)
+    active = active_link?(key)
+    base = "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors"
+    active ? "#{base} bg-[#eaf2ff] text-[#124170] font-semibold" : "#{base} text-slate-600 hover:bg-slate-100 hover:text-slate-900"
   end
 end
