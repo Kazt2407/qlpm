@@ -1,4 +1,6 @@
 class DevicesController < ApplicationController
+  PER_PAGE = 15
+
   before_action :set_device, only: %i[show edit update destroy update_status]
 
   def index
@@ -7,7 +9,16 @@ class DevicesController < ApplicationController
     @devices = @devices.by_type(params[:device_type])         if params[:device_type].present?
     @devices = @devices.by_room(params[:room])                if params[:room].present?
     @devices = @devices.where(status: params[:status])        if params[:status].present?
-    @devices = @devices.order(created_at: :desc).page(params[:page]).per(15)
+
+    ordered_devices = @devices.order(created_at: :desc)
+    @total_count = ordered_devices.count
+    @total_pages = [(@total_count.to_f / PER_PAGE).ceil, 1].max
+    @current_page = params.fetch(:page, 1).to_i
+    @current_page = 1 if @current_page < 1
+    @current_page = @total_pages if @current_page > @total_pages
+    offset = (@current_page - 1) * PER_PAGE
+
+    @devices = ordered_devices.limit(PER_PAGE).offset(offset)
   end
 
   def show
@@ -58,7 +69,7 @@ class DevicesController < ApplicationController
 
   def device_params
     params.require(:device).permit(
-      :code, :name, :device_type, :room, :brand, :model_name,
+      :code, :name, :device_type, :room, :brand, :device_name,
       :imported_at, :warranty_until, :status, :notes,
       :cpu, :ram, :storage, :os, :ip_address, :desk_number
     )

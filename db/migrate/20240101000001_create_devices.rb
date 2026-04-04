@@ -6,7 +6,7 @@ class CreateDevices < ActiveRecord::Migration[7.1]
       t.string  :device_type,     null: false
       t.string  :room,            null: false
       t.string  :brand
-      t.string  :model_name
+      t.string  :device_name
       t.string  :status,          null: false, default: "active"
       t.date    :imported_at
       t.date    :warranty_until

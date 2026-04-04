@@ -31,7 +31,7 @@
              ["Phòng",        "#{@device.room}#{@device.desk_number.present? ? ' – Bàn ' + @device.desk_number.to_s : ''}"],
              ["Loại",         @device.device_type],
              ["Thương hiệu",  @device.brand],
-             ["Model",        @device.model_name],
+             ["Model",        @device.device_name],
              ["Ngày nhập",    vn_date(@device.imported_at)],
              ["Bảo hành đến", vn_date(@device.warranty_until)]
            ].each do |label, value| %>

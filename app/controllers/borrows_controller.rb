@@ -40,15 +40,22 @@ class BorrowsController < ApplicationController
   end
 
   def update
+    previous_device = @borrow.device
+
     if @borrow.update(borrow_params)
+      previous_device.update!(status: "active") if previous_device != @borrow.device && previous_device.active_borrow.blank?
+      @borrow.device.update!(status: "borrowed") if @borrow.returned_at.nil?
       redirect_to borrows_path, notice: "Cập nhật phiếu mượn thành công."
     else
+      @available_devices = Device.active.or(Device.where(id: @borrow.device_id))
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
+    device = @borrow.device
     @borrow.destroy
+    device.update!(status: "active") if device.active_borrow.blank?
     redirect_to borrows_path, notice: "Đã xóa phiếu mượn."
   end
 

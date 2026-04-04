@@ -101,13 +101,13 @@
   <%# Pagination footer %>
   <div class="flex items-center justify-between px-6 py-4 border-t border-white/5">
     <p class="text-gray-500 text-sm">
-      Hiển thị <%= @devices.respond_to?(:total_count) ? @devices.total_count : @devices.size %> thiết bị
+      Hiển thị <%= @total_count %> thiết bị
     </p>
-    <% if @devices.respond_to?(:total_pages) && @devices.total_pages > 1 %>
+    <% if @total_pages > 1 %>
       <div class="flex gap-1">
-        <% (1..@devices.total_pages).each do |p| %>
+        <% (1..@total_pages).each do |p| %>
           <%= link_to p, devices_path(params.permit(:q, :device_type, :room, :status).merge(page: p)),
-                class: "w-8 h-8 rounded-lg text-sm flex items-center justify-center transition-colors #{p == @devices.current_page ? 'bg-indigo-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-indigo-600 hover:text-white'}" %>
+                class: "w-8 h-8 rounded-lg text-sm flex items-center justify-center transition-colors #{p == @current_page ? 'bg-indigo-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-indigo-600 hover:text-white'}" %>
         <% end %>
       </div>
     <% end %>

@@ -17,18 +17,20 @@ Rails 7 application chuyển đổi từ 5 HTML views sang full MVC.
 
 ```bash
 # 1. Clone hoặc giải nén project
-cd phonemay_app
+git clone https://github.com/Kazt2407/qlpm.git qlpm
+cd qlpm
 
 # 2. Cài đặt gems
+bundle config set --local path 'vendor/bundle'
 bundle install
 
 # 3. Thiết lập database
-rails db:create
-rails db:migrate
-rails db:seed      # tạo dữ liệu mẫu
+bin/rails db:create
+bin/rails db:migrate
+bin/rails db:seed      # tạo dữ liệu mẫu
 
 # 4. Khởi chạy server
-rails server
+bin/rails server
 # Truy cập: http://localhost:3000
 ```
 

@@ -8,6 +8,7 @@ class Borrow < ApplicationRecord
   validates :borrowed_at,   presence: true
   validates :due_at,        presence: true
   validate  :due_at_after_borrowed_at
+  validate  :device_available_for_open_borrow
 
   scope :borrowing, -> { where(returned_at: nil).where("due_at >= ?", Date.today) }
   scope :returned,  -> { where.not(returned_at: nil) }
@@ -39,8 +40,10 @@ class Borrow < ApplicationRecord
   end
 
   def confirm_return!
-    update!(returned_at: Time.current)
-    device.update!(status: "active")
+    transaction do
+      update!(returned_at: Time.current)
+      device.update!(status: "active")
+    end
   end
 
   private
@@ -48,5 +51,14 @@ class Borrow < ApplicationRecord
   def due_at_after_borrowed_at
     return unless borrowed_at && due_at
     errors.add(:due_at, "phải sau ngày mượn") if due_at < borrowed_at
+  end
+
+  def device_available_for_open_borrow
+    return if returned_at.present? || device.blank?
+
+    open_borrows = device.borrows.where(returned_at: nil).where.not(id: id)
+    return unless open_borrows.exists? || !device.status.in?(%w[active borrowed])
+
+    errors.add(:device_id, "đang có phiếu mượn chưa trả")
   end
 end
