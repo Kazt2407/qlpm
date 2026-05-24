@@ -26,9 +26,11 @@ RUN bundle _${BUNDLER_VERSION}_ config set path "${BUNDLE_PATH}" && \
     bundle _${BUNDLER_VERSION}_ install --jobs ${BUNDLE_JOBS} --retry ${BUNDLE_RETRY}
 
 COPY . .
-RUN chmod +x bin/docker-entrypoint bin/rails
+RUN sed -i 's/\r$//' bin/docker-entrypoint bin/rails && \
+    cp bin/docker-entrypoint /usr/local/bin/qlpm-docker-entrypoint && \
+    chmod +x /usr/local/bin/qlpm-docker-entrypoint bin/rails
 
 EXPOSE 3000
 
-ENTRYPOINT ["./bin/docker-entrypoint"]
-CMD ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+ENTRYPOINT ["/usr/local/bin/qlpm-docker-entrypoint"]
+CMD ["ruby", "./bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]

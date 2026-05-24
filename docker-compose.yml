@@ -76,7 +76,7 @@ services:
       - app_storage:/app/storage
       - app_tmp:/app/tmp
       - app_log:/app/log
-    command: ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+    command: ["ruby", "./bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]
 
   adminer:
     image: adminer:4
