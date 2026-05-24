@@ -7,8 +7,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
       MYSQL_DATABASE: ${DB_NAME_DEVELOPMENT:-qlpm_development}
-      MYSQL_USER: ${DB_USERNAME:-qlpm}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-qlpm}
+      DB_USERNAME: ${DB_USERNAME:-qlpm}
+      DB_PASSWORD: ${DB_PASSWORD:-qlpm}
       MYSQL_TEST_DATABASE: ${DB_NAME_TEST:-qlpm_test}
       MYSQL_PROD_DATABASE: ${DB_NAME_PRODUCTION:-qlpm_production}
     command:
