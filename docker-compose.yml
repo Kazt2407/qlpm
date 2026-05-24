@@ -6,11 +6,9 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${DB_NAME_DEVELOPMENT:-qlpm_development}
+      MYSQL_DATABASE: ${DB_NAME:-qlpm}
       DB_USERNAME: ${DB_USERNAME:-qlpm}
       DB_PASSWORD: ${DB_PASSWORD:-qlpm}
-      MYSQL_TEST_DATABASE: ${DB_NAME_TEST:-qlpm_test}
-      MYSQL_PROD_DATABASE: ${DB_NAME_PRODUCTION:-qlpm_production}
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -49,9 +47,7 @@ services:
       DB_USERNAME: ${DB_USERNAME:-qlpm}
       DB_PASSWORD: ${DB_PASSWORD:-qlpm}
       DB_TIMEOUT: ${DB_TIMEOUT:-5000}
-      DB_NAME_DEVELOPMENT: ${DB_NAME_DEVELOPMENT:-qlpm_development}
-      DB_NAME_TEST: ${DB_NAME_TEST:-qlpm_test}
-      DB_NAME_PRODUCTION: ${DB_NAME_PRODUCTION:-qlpm_production}
+      DB_NAME: ${DB_NAME:-qlpm}
       APP_PAGINATION_DEFAULT_PER_PAGE: ${APP_PAGINATION_DEFAULT_PER_PAGE:-15}
       APP_PAGINATION_MAX_PER_PAGE: ${APP_PAGINATION_MAX_PER_PAGE:-100}
       APP_PAGINATION_OPTIONS: ${APP_PAGINATION_OPTIONS:-15,30,50}

@@ -6,7 +6,7 @@ SQL_FILE="${1:-${ROOT_DIR}/db/mock_data.sql}"
 
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
-DB_NAME="${DB_NAME_DEVELOPMENT:-qlpm_development}"
+DB_NAME="${DB_NAME:-qlpm}"
 DB_USERNAME="${DB_USERNAME:-qlpm}"
 DB_PASSWORD="${DB_PASSWORD:-qlpm}"
 DOCKER_MODE="${DOCKER_MODE:-1}"

@@ -11,12 +11,12 @@ default: &default
 
 development:
   <<: *default
-  database: <%= ENV.fetch("DB_NAME_DEVELOPMENT", "qlpm_development") %>
+  database: <%= ENV.fetch("DB_NAME", "qlpm") %>
 
 test:
   <<: *default
-  database: <%= ENV.fetch("DB_NAME_TEST", "qlpm_test") %>
+  database: <%= ENV.fetch("DB_NAME", "qlpm") %>
 
 production:
   <<: *default
-  database: <%= ENV.fetch("DB_NAME_PRODUCTION", "qlpm_production") %>
+  database: <%= ENV.fetch("DB_NAME", "qlpm") %>
