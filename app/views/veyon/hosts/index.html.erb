@@ -1,0 +1,79 @@
+<% content_for :title, "Điều khiển Veyon" %>
+
+<div class="mb-6 rounded-3xl border border-slate-200/70 bg-gradient-to-r from-[#124170] to-[#3f7baa] p-6 text-white shell-card">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-3xl font-extrabold">Điều khiển phòng máy</h1>
+    <% if can_manage_system? %>
+      <%= link_to "Thêm máy", new_veyon_host_path, class: "rounded-2xl border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="shell-card rounded-3xl border border-slate-200/70 p-5">
+  <%= form_with url: veyon_hosts_path, method: :get, class: "grid gap-3 md:grid-cols-4" do |f| %>
+    <%= f.text_field :q, value: params[:q], placeholder: "Tìm host / IP", class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.select :enabled,
+      [["Tất cả trạng thái", ""], ["Đang kích hoạt", true], ["Đã tắt", false]],
+      { selected: params[:enabled] },
+      class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.select :asset_id,
+      [["Tất cả đối tượng", ""]] + @assets_for_filter.map { |a| ["#{a.code} - #{a.name}", a.id] },
+      { selected: params[:asset_id] },
+      class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+
+    <div class="flex gap-2">
+      <%= f.select :per_page, pagination_per_page_options, { selected: selected_per_page_param }, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      <%= f.submit "Lọc", class: "rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" %>
+    </div>
+  <% end %>
+</div>
+
+<div class="shell-card mt-6 overflow-hidden rounded-3xl border border-slate-200/70">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
+      <tr>
+        <th class="px-4 py-3">Host</th>
+        <th class="px-4 py-3">Đối tượng</th>
+        <th class="px-4 py-3">Trạng thái</th>
+        <th class="px-4 py-3">Hoạt động gần nhất</th>
+        <th class="px-4 py-3">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100 bg-white">
+      <% @veyon_hosts.each do |host| %>
+        <tr>
+          <td class="px-4 py-3">
+            <div class="font-semibold text-slate-900"><%= host.host %></div>
+            <div class="text-xs text-slate-500">Veyon Service port <%= host.service_port %></div>
+          </td>
+          <td class="px-4 py-3">
+            <div class="font-semibold text-slate-900"><%= host.asset.name %></div>
+            <div class="text-xs text-slate-500"><%= host.asset.code %></div>
+          </td>
+          <td class="px-4 py-3">
+            <%= status_badge(host.enabled? ? "Kích hoạt" : "Đã tắt", host.enabled? ? "emerald" : "gray") %>
+            <span class="ml-2"><%= status_badge(host.health_state == "online" ? "Online" : "Offline", host.health_state == "online" ? "sky" : "red") %></span>
+          </td>
+          <td class="px-4 py-3 text-slate-600"><%= vn_datetime(host.last_seen_at) %></td>
+          <td class="px-4 py-3">
+            <div class="flex flex-wrap gap-2">
+              <%= link_to "Mở điều khiển", veyon_host_path(host), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" %>
+              <% if can_manage_system? %>
+                <%= link_to "Sửa", edit_veyon_host_path(host), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" %>
+                <%= button_to "Xóa", veyon_host_path(host), method: :delete, data: { turbo_confirm: "Xóa host này?" }, class: "rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-medium text-white" %>
+              <% end %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+
+      <% if @veyon_hosts.empty? %>
+        <tr>
+          <td colspan="5" class="px-4 py-12 text-center text-slate-500">Chưa có host Veyon nào.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%= render "shared/pagination", page: @page, total_pages: @total_pages, total_count: @total_count %>

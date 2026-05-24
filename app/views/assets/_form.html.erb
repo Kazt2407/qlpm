@@ -21,15 +21,15 @@
   <div class="grid gap-5 md:grid-cols-3">
     <div>
       <%= f.label :asset_type, "Loại đối tượng", class: "mb-2 block text-sm font-medium text-slate-700" %>
-      <%= f.select :asset_type, Asset::ASSET_TYPES, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      <%= f.select :asset_type, Asset.asset_type_options, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     </div>
     <div>
-      <%= f.label :category, "Category", class: "mb-2 block text-sm font-medium text-slate-700" %>
-      <%= f.select :category, Asset::CATEGORIES, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      <%= f.label :category, "Nhóm thiết bị", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.select :category, Asset.category_options, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     </div>
     <div>
       <%= f.label :status, "Trạng thái", class: "mb-2 block text-sm font-medium text-slate-700" %>
-      <%= f.select :status, Asset::STATUSES, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      <%= f.select :status, Asset.status_options, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     </div>
   </div>
 
@@ -46,15 +46,15 @@
 
   <div class="grid gap-5 md:grid-cols-3">
     <div>
-      <%= f.label :brand, "Brand", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.label :brand, "Hãng sản xuất", class: "mb-2 block text-sm font-medium text-slate-700" %>
       <%= f.text_field :brand, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     </div>
     <div>
-      <%= f.label :model_code, "Model", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.label :model_code, "Mẫu mã", class: "mb-2 block text-sm font-medium text-slate-700" %>
       <%= f.text_field :model_code, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     </div>
     <div>
-      <%= f.label :serial_number, "Serial", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.label :serial_number, "Số sê-ri", class: "mb-2 block text-sm font-medium text-slate-700" %>
       <%= f.text_field :serial_number, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     </div>
   </div>
@@ -77,9 +77,9 @@
   <div class="grid gap-5 md:grid-cols-2">
     <%= f.text_field :cpu, placeholder: "CPU", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     <%= f.text_field :ram, placeholder: "RAM", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
-    <%= f.text_field :storage, placeholder: "Storage", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.text_field :storage, placeholder: "Ổ lưu trữ", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     <%= f.text_field :os, placeholder: "OS", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
-    <%= f.text_field :ip_address, placeholder: "IP address", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm md:col-span-2" %>
+    <%= f.text_field :ip_address, placeholder: "Địa chỉ IP", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm md:col-span-2" %>
   </div>
 
   <div>

@@ -1,4 +1,4 @@
-<% content_for :title, "Dashboard" %>
+<% content_for :title, "Bảng điều khiển" %>
 
 <div class="mb-8 flex items-start justify-between">
   <div>
@@ -16,8 +16,8 @@
 
 <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
   <% [
-    ["Tổng đối tượng", @total_assets, "Quản lý theo room, computer, device"],
-    ["Phòng máy", @total_rooms, "Có thể nhập lịch từ sheet"],
+    ["Tổng đối tượng", @total_assets, "Quản lý theo phòng máy, máy tính, thiết bị"],
+    ["Phòng máy", @total_rooms, "Có thể nhập lịch từ tệp"],
     ["Sẵn sàng", @active_assets, "#{@active_pct}% tổng tài nguyên"],
     ["Đang sử dụng", @borrowed_assets, "#{@maintenance_assets} đang cần xử lý"]
   ].each do |label, value, note| %>
@@ -32,8 +32,8 @@
 <div class="mt-6 grid gap-6 xl:grid-cols-3">
   <div class="shell-card rounded-3xl border border-slate-200/70 p-6 xl:col-span-2">
     <div class="mb-5 flex items-center justify-between">
-      <h2 class="text-lg font-bold text-slate-900">Phân bố asset theo phòng</h2>
-      <span class="text-xs uppercase tracking-[0.2em] text-slate-400">room load</span>
+      <h2 class="text-lg font-bold text-slate-900">Phân bố đối tượng theo phòng</h2>
+      <span class="text-xs uppercase tracking-[0.2em] text-slate-400">mật độ phòng</span>
     </div>
     <div class="space-y-4">
       <% max_count = [@assets_by_room.map { |row| row[:count] }.max, 1].max %>
@@ -41,7 +41,7 @@
         <div>
           <div class="mb-2 flex items-center justify-between text-sm">
             <span class="font-medium text-slate-700"><%= row[:room] %></span>
-            <span class="text-slate-500"><%= row[:count] %> assets</span>
+            <span class="text-slate-500"><%= row[:count] %> đối tượng</span>
           </div>
           <div class="h-3 rounded-full bg-slate-100">
             <div class="h-3 rounded-full bg-gradient-to-r from-[#124170] to-[#5ea3d6]" style="width: <%= pct_width(row[:count], max_count) %>"></div>
@@ -75,7 +75,7 @@
     <table class="min-w-full divide-y divide-slate-200 text-sm">
       <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
         <tr>
-          <th class="px-4 py-3">Asset</th>
+          <th class="px-4 py-3">Đối tượng</th>
           <th class="px-4 py-3">Người mượn</th>
           <th class="px-4 py-3">Khoảng thời gian</th>
           <th class="px-4 py-3">Trạng thái</th>
@@ -91,7 +91,7 @@
               </td>
               <td class="px-4 py-3">
                 <div class="text-slate-800"><%= borrow.borrower_name %></div>
-                <div class="text-xs text-slate-500"><%= borrow.borrower_group.presence || borrow.borrower_type %></div>
+                <div class="text-xs text-slate-500"><%= borrow.borrower_group.presence || borrow.borrower_type_label %></div>
               </td>
               <td class="px-4 py-3 text-slate-600">
                 <%= vn_datetime(borrow.starts_at) %><br>

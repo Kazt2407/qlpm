@@ -1,10 +1,17 @@
 <% content_for :title, "Tạo phiếu mượn" %>
+<%
+  requester_label = requester_user? ? current_user.user_type_label : current_user.role_label
+  helper_note = requester_user? ? "Điền mục đích và thời gian rõ ràng để phiếu được duyệt nhanh." : "Bạn có thể tạo phiếu đại diện khi cần xử lý tình huống đặc biệt."
+%>
 
 <div class="mx-auto max-w-5xl">
-  <div class="mb-6">
-    <h1 class="text-3xl font-extrabold text-slate-900">Tạo phiếu mượn</h1>
-    <p class="mt-2 text-sm text-slate-500">Hỗ trợ teacher, student và system-import theo thời gian bắt đầu/kết thúc.</p>
+  <div class="mb-6 rounded-3xl border border-slate-200/70 bg-gradient-to-r from-[#124170] to-[#4e8cba] p-6 text-white shell-card">
+    <p class="text-xs uppercase tracking-[0.25em] text-sky-100">Yêu cầu mượn mới</p>
+    <h1 class="mt-2 text-3xl font-extrabold">Tạo phiếu mượn</h1>
+    <p class="mt-2 text-sm text-sky-50">Người gửi: <span class="font-semibold"><%= current_user.full_name %></span> · <%= requester_label %></p>
+    <p class="mt-2 text-sm text-sky-100"><%= helper_note %></p>
   </div>
+
   <div class="shell-card rounded-3xl border border-slate-200/70 p-6">
     <%= render "form", borrow: @borrow %>
   </div>

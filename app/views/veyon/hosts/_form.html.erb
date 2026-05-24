@@ -1,0 +1,52 @@
+<%= form_with model: [:veyon, @veyon_host], class: "space-y-4" do |f| %>
+  <% if @veyon_host.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <p class="font-semibold">Không thể lưu cấu hình:</p>
+      <ul class="mt-2 list-disc pl-5">
+        <% @veyon_host.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <%= f.label :asset_id, "Đối tượng", class: "mb-1 block text-sm font-medium text-slate-700" %>
+      <%= f.select :asset_id,
+          @assets.map { |asset| ["#{asset.code} - #{asset.name}", asset.id] },
+          { include_blank: "Chọn đối tượng" },
+          class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+
+    <div>
+      <%= f.label :host, "Host/IP", class: "mb-1 block text-sm font-medium text-slate-700" %>
+      <%= f.text_field :host, placeholder: "pc-lab-a-01.school.local", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+
+    <div>
+      <%= f.label :service_port, "Cổng Veyon Service", class: "mb-1 block text-sm font-medium text-slate-700" %>
+      <%= f.number_field :service_port, min: 1, max: 65_535, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      <p class="mt-1 text-xs text-slate-500">Mặc định 11100 trên máy Windows client. Không phải cổng WebAPI Proxy 11080.</p>
+    </div>
+
+    <div class="flex items-center gap-2 pt-8">
+      <%= f.check_box :enabled, class: "h-4 w-4 rounded border-slate-300" %>
+      <%= f.label :enabled, "Cho phép điều khiển", class: "text-sm text-slate-700" %>
+    </div>
+  </div>
+
+  <div>
+    <%= f.label :metadata_json, "Metadata JSON (tùy chọn)", class: "mb-1 block text-sm font-medium text-slate-700" %>
+    <%= f.text_area :metadata_json,
+        value: @veyon_host.metadata_json.present? ? JSON.pretty_generate(@veyon_host.metadata_json) : nil,
+        rows: 4,
+        class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm",
+        placeholder: '{"room":"LAB-A","note":"máy đầu dãy"}' %>
+  </div>
+
+  <div class="flex gap-2">
+    <%= f.submit "Lưu cấu hình", class: "rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white" %>
+    <%= link_to "Quay lại", veyon_hosts_path, class: "rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700" %>
+  </div>
+<% end %>

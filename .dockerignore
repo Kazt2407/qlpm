@@ -1,0 +1,17 @@
+.git
+.gitignore
+.vscode
+.codex
+.agents
+
+log/*
+tmp/*
+storage/*
+vendor/bundle
+
+.env
+.env.*
+!.env.example
+
+node_modules
+coverage

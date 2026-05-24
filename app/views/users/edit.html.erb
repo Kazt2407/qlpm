@@ -1,0 +1,11 @@
+<% content_for :title, "Cập nhật người dùng" %>
+
+<div class="mx-auto max-w-5xl">
+  <div class="mb-6">
+    <h1 class="text-3xl font-extrabold text-slate-900">Cập nhật người dùng</h1>
+    <p class="mt-2 text-sm text-slate-500">Điều chỉnh phân quyền và thông tin tài khoản.</p>
+  </div>
+  <div class="shell-card rounded-3xl border border-slate-200/70 p-6">
+    <%= render "form", user: @user %>
+  </div>
+</div>

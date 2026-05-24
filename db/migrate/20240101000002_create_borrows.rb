@@ -1,9 +1,9 @@
 class CreateBorrows < ActiveRecord::Migration[7.1]
   def change
     create_table :borrows do |t|
-      t.references :asset,              null: false, foreign_key: true
-      t.references :created_by,         null: true, foreign_key: { to_table: :users }
-      t.references :approved_by,        null: true, foreign_key: { to_table: :users }
+      t.references :asset,              null: false, type: :bigint, foreign_key: true
+      t.references :created_by,         null: true, type: :bigint, foreign_key: { to_table: :users }
+      t.references :approved_by,        null: true, type: :bigint, foreign_key: { to_table: :users }
       t.string     :borrow_source,      null: false
       t.string     :borrower_type,      null: false
       t.string     :borrower_name,      null: false

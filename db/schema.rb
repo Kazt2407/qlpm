@@ -10,14 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_01_01_000002) do
-  create_table "assets", force: :cascade do |t|
+ActiveRecord::Schema[7.2].define(version: 2026_05_11_000005) do
+  create_table "assets", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "code", null: false
     t.string "name", null: false
     t.string "asset_type", null: false
     t.string "category", null: false
-    t.integer "room_id"
-    t.integer "parent_id"
+    t.bigint "room_id"
+    t.bigint "parent_id"
     t.string "status", default: "active", null: false
     t.string "brand"
     t.string "model_code"
@@ -41,10 +41,10 @@ ActiveRecord::Schema[7.2].define(version: 2024_01_01_000002) do
     t.index ["status"], name: "index_assets_on_status"
   end
 
-  create_table "borrows", force: :cascade do |t|
-    t.integer "asset_id", null: false
-    t.integer "created_by_id"
-    t.integer "approved_by_id"
+  create_table "borrows", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "asset_id", null: false
+    t.bigint "created_by_id"
+    t.bigint "approved_by_id"
     t.string "borrow_source", null: false
     t.string "borrower_type", null: false
     t.string "borrower_name", null: false
@@ -60,18 +60,23 @@ ActiveRecord::Schema[7.2].define(version: 2024_01_01_000002) do
     t.integer "import_row_number"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "approved_at"
+    t.datetime "reminded_at"
+    t.string "reminder_channel"
+    t.index ["approved_at"], name: "index_borrows_on_approved_at"
     t.index ["approved_by_id"], name: "index_borrows_on_approved_by_id"
     t.index ["asset_id"], name: "index_borrows_on_asset_id"
     t.index ["borrow_source"], name: "index_borrows_on_borrow_source"
     t.index ["borrower_type"], name: "index_borrows_on_borrower_type"
     t.index ["created_by_id"], name: "index_borrows_on_created_by_id"
     t.index ["ends_at"], name: "index_borrows_on_ends_at"
+    t.index ["reminded_at"], name: "index_borrows_on_reminded_at"
     t.index ["returned_at"], name: "index_borrows_on_returned_at"
     t.index ["starts_at"], name: "index_borrows_on_starts_at"
     t.index ["workflow_state"], name: "index_borrows_on_workflow_state"
   end
 
-  create_table "rooms", force: :cascade do |t|
+  create_table "rooms", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "code", null: false
     t.string "name", null: false
     t.string "room_type", default: "computer_room", null: false
@@ -86,7 +91,7 @@ ActiveRecord::Schema[7.2].define(version: 2024_01_01_000002) do
     t.index ["status"], name: "index_rooms_on_status"
   end
 
-  create_table "users", force: :cascade do |t|
+  create_table "users", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "full_name", null: false
     t.string "email", null: false
     t.string "role", default: "user", null: false
@@ -102,9 +107,52 @@ ActiveRecord::Schema[7.2].define(version: 2024_01_01_000002) do
     t.index ["user_type"], name: "index_users_on_user_type"
   end
 
+  create_table "veyon_actions", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "borrow_id"
+    t.bigint "asset_id", null: false
+    t.bigint "veyon_host_id"
+    t.string "host", null: false
+    t.string "feature_key", null: false
+    t.string "status", default: "queued", null: false
+    t.string "error_code"
+    t.string "error_message"
+    t.json "request_payload_json"
+    t.json "response_payload_json"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_veyon_actions_on_asset_id"
+    t.index ["borrow_id"], name: "index_veyon_actions_on_borrow_id"
+    t.index ["created_at"], name: "index_veyon_actions_on_created_at"
+    t.index ["feature_key"], name: "index_veyon_actions_on_feature_key"
+    t.index ["host"], name: "index_veyon_actions_on_host"
+    t.index ["status"], name: "index_veyon_actions_on_status"
+    t.index ["user_id"], name: "index_veyon_actions_on_user_id"
+    t.index ["veyon_host_id"], name: "index_veyon_actions_on_veyon_host_id"
+  end
+
+  create_table "veyon_hosts", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "asset_id", null: false
+    t.string "host", null: false
+    t.integer "service_port", default: 11100, null: false
+    t.boolean "enabled", default: true, null: false
+    t.datetime "last_seen_at"
+    t.json "metadata_json"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_veyon_hosts_on_asset_id"
+    t.index ["enabled"], name: "index_veyon_hosts_on_enabled"
+    t.index ["host", "service_port"], name: "index_veyon_hosts_on_host_and_service_port", unique: true
+  end
+
   add_foreign_key "assets", "assets", column: "parent_id"
   add_foreign_key "assets", "rooms"
   add_foreign_key "borrows", "assets"
   add_foreign_key "borrows", "users", column: "approved_by_id"
   add_foreign_key "borrows", "users", column: "created_by_id"
+  add_foreign_key "veyon_actions", "assets"
+  add_foreign_key "veyon_actions", "borrows"
+  add_foreign_key "veyon_actions", "users"
+  add_foreign_key "veyon_actions", "veyon_hosts"
+  add_foreign_key "veyon_hosts", "assets"
 end

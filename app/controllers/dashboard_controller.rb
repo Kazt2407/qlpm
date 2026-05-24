@@ -1,4 +1,6 @@
 class DashboardController < ApplicationController
+  before_action :require_system_access!
+
   def index
     @total_assets = Asset.count
     @total_rooms = Room.count
@@ -21,7 +23,7 @@ class DashboardController < ApplicationController
       system: Borrow.where(borrower_type: "system").count
     }
 
-    scope = current_user.admin? ? Borrow.includes(:asset).recent : Borrow.includes(:asset).where(created_by: current_user).recent
+    scope = Borrow.includes(:asset).recent
     @recent_borrows = scope.limit(8)
   end
 end

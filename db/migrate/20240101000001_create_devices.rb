@@ -38,8 +38,8 @@ class CreateDevices < ActiveRecord::Migration[7.1]
       t.string     :name,           null: false
       t.string     :asset_type,     null: false
       t.string     :category,       null: false
-      t.references :room,           null: true, foreign_key: true
-      t.references :parent,         null: true, foreign_key: { to_table: :assets }
+      t.references :room,           null: true, type: :bigint, foreign_key: true
+      t.references :parent,         null: true, type: :bigint, foreign_key: { to_table: :assets }
       t.string     :status,         null: false, default: "active"
       t.string     :brand
       t.string     :model_code

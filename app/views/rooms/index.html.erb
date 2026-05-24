@@ -1,0 +1,66 @@
+<% content_for :title, "Phòng máy" %>
+
+<div class="mb-8 flex items-start justify-between">
+  <div>
+    <h1 class="text-3xl font-extrabold text-slate-900">Phòng máy</h1>
+    <p class="mt-2 text-sm text-slate-500">Quản lý danh mục phòng và trạng thái vận hành.</p>
+  </div>
+  <%= link_to "Thêm phòng", new_room_path, class: "rounded-2xl bg-[#124170] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0d3258]" %>
+</div>
+
+<div class="shell-card rounded-3xl border border-slate-200/70 p-5">
+  <%= form_with url: rooms_path, method: :get, class: "grid gap-3 md:grid-cols-4" do |f| %>
+    <%= f.text_field :q, value: params[:q], placeholder: "Tìm theo mã, tên, vị trí...", class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.select :room_type, [["Tất cả loại", ""]] + Room.room_type_options, { selected: params[:room_type] }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.select :status, [["Tất cả trạng thái", ""]] + Room.status_options, { selected: params[:status] }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.select :sort, [["Tên A-Z", "name_asc"], ["Tên Z-A", "name_desc"], ["Mã A-Z", "code_asc"], ["Mới cập nhật", "updated_desc"]], { selected: params[:sort] || "name_asc" }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+
+    <div class="md:col-span-4 flex gap-3">
+      <%= f.select :per_page, pagination_per_page_options, { selected: selected_per_page_param }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      <%= f.submit "Lọc", class: "rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" %>
+    </div>
+  <% end %>
+</div>
+
+<div class="shell-card mt-6 overflow-hidden rounded-3xl border border-slate-200/70">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
+      <tr>
+        <th class="px-4 py-3">Mã</th>
+        <th class="px-4 py-3">Tên</th>
+        <th class="px-4 py-3">Loại</th>
+        <th class="px-4 py-3">Sức chứa</th>
+        <th class="px-4 py-3">Trạng thái</th>
+        <th class="px-4 py-3">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100 bg-white">
+      <% @rooms.each do |room| %>
+        <tr>
+          <td class="px-4 py-3 font-semibold text-[#124170]"><%= room.code %></td>
+          <td class="px-4 py-3">
+            <div class="font-semibold text-slate-900"><%= room.name %></div>
+            <div class="text-xs text-slate-500"><%= room.location.presence || "–" %></div>
+          </td>
+          <td class="px-4 py-3 text-slate-600"><%= room.room_type_label %></td>
+          <td class="px-4 py-3 text-slate-600"><%= room.capacity || "–" %></td>
+          <td class="px-4 py-3"><%= status_badge(room.status_label, room.status == "active" ? "emerald" : "gray") %></td>
+          <td class="px-4 py-3">
+            <div class="flex flex-wrap gap-2">
+              <%= link_to "Xem", room_path(room), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50" %>
+              <%= link_to "Sửa", edit_room_path(room), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50" %>
+              <%= button_to "Xóa", room_path(room), method: :delete, data: { turbo_confirm: "Xóa phòng này?" }, class: "rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100" %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+      <% if @rooms.empty? %>
+        <tr>
+          <td colspan="6" class="px-4 py-12 text-center text-slate-500">Không có phòng phù hợp.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%= render "shared/pagination", page: @page, total_pages: @total_pages, total_count: @total_count %>

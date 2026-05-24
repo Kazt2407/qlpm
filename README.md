@@ -196,3 +196,49 @@ bin/rails zeitwerk:check
 - Thêm quản lý duyệt yêu cầu mượn nhiều bước
 - Nâng cấp authentication và password hashing
 - Bổ sung test model, controller, và system test
+
+## Tài liệu kiến trúc Veyon
+
+- [Kiến trúc tích hợp Veyon](docs/veyon/architecture.md)
+- [API contract Gateway](docs/veyon/gateway-openapi.yaml)
+- [Checklist triển khai](docs/veyon/deployment-checklist.md)
+
+### Trạng thái Rails side (đã triển khai)
+
+- Quản lý host điều khiển: `GET /veyon/hosts`
+- Màn hình điều khiển chi tiết + live framebuffer: `GET /veyon/hosts/:id`
+- Gửi lệnh điều khiển: `POST /veyon/hosts/:id/execute_feature`
+- Ghi audit toàn bộ thao tác vào `veyon_actions`
+
+Phân quyền:
+
+- `admin`: CRUD host + điều khiển
+- `approver`: chỉ xem/điều khiển
+- `teacher/student`: không truy cập module Veyon
+
+### Gateway service (đã triển khai)
+
+- Source: [services/veyon-gateway/server.mjs](services/veyon-gateway/server.mjs)
+- Docker service: `veyon-gateway` trong [docker-compose.yml](/home/kazt/Projects/qlpm/docker-compose.yml)
+
+Khởi động:
+
+```bash
+docker compose up -d --build veyon-gateway app
+```
+
+Kiểm tra sức khỏe:
+
+```bash
+curl http://localhost:8088/v1/health
+```
+
+Lưu ý cấu hình bắt buộc:
+
+- `VEYON_GATEWAY_API_KEY` phải khớp giữa Rails và gateway
+- `VEYON_WEBAPI_BASE_URL` phải trỏ tới Veyon WebAPI Proxy thực tế, thường là port `11080`
+- Nếu WebAPI Proxy chạy trên Docker host, mặc định `host.docker.internal:11080` đã được map qua `extra_hosts`
+- Host trong màn hình Veyon của QLPM phải trỏ tới máy Windows client và `service_port` thường là `11100`
+- Với `auth_logon` hoặc `auth_ldap`: cần `VEYON_AUTH_USERNAME` + `VEYON_AUTH_PASSWORD`
+
+pkexec env WAYLAND_DISPLAY=$WAYLAND_DISPLAY XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS QT_QPA_PLATFORM=wayland veyon-configurator

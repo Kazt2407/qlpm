@@ -1,0 +1,124 @@
+name: qlpm
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME_DEVELOPMENT:-qlpm_development}
+      MYSQL_USER: ${DB_USERNAME:-qlpm}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-qlpm}
+      MYSQL_TEST_DATABASE: ${DB_NAME_TEST:-qlpm_test}
+      MYSQL_PROD_DATABASE: ${DB_NAME_PRODUCTION:-qlpm_production}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "${DB_FORWARD_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: qlpm-app:dev
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      veyon-gateway:
+        condition: service_healthy
+    working_dir: /app
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      RAILS_ENV: ${RAILS_ENV:-development}
+      RAILS_MAX_THREADS: ${RAILS_MAX_THREADS:-5}
+      APP_HOST: ${APP_HOST:-localhost}
+      APP_PORT: ${APP_PORT:-3000}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: ${DB_USERNAME:-qlpm}
+      DB_PASSWORD: ${DB_PASSWORD:-qlpm}
+      DB_TIMEOUT: ${DB_TIMEOUT:-5000}
+      DB_NAME_DEVELOPMENT: ${DB_NAME_DEVELOPMENT:-qlpm_development}
+      DB_NAME_TEST: ${DB_NAME_TEST:-qlpm_test}
+      DB_NAME_PRODUCTION: ${DB_NAME_PRODUCTION:-qlpm_production}
+      APP_PAGINATION_DEFAULT_PER_PAGE: ${APP_PAGINATION_DEFAULT_PER_PAGE:-15}
+      APP_PAGINATION_MAX_PER_PAGE: ${APP_PAGINATION_MAX_PER_PAGE:-100}
+      APP_PAGINATION_OPTIONS: ${APP_PAGINATION_OPTIONS:-15,30,50}
+      APP_BORROW_DEFAULT_DURATION_MINUTES: ${APP_BORROW_DEFAULT_DURATION_MINUTES:-120}
+      APP_REPORT_TOP_BORROWERS_LIMIT: ${APP_REPORT_TOP_BORROWERS_LIMIT:-5}
+      APP_REPORT_ATTENTION_ASSETS_LIMIT: ${APP_REPORT_ATTENTION_ASSETS_LIMIT:-5}
+      APP_REPORT_MONTHS_LOOKBACK: ${APP_REPORT_MONTHS_LOOKBACK:-12}
+      VEYON_ENABLED: ${VEYON_ENABLED:-false}
+      VEYON_GATEWAY_BASE_URL: ${VEYON_GATEWAY_BASE_URL:-http://veyon-gateway:8088}
+      VEYON_GATEWAY_API_KEY: ${VEYON_GATEWAY_API_KEY:-change-me}
+      VEYON_FRAMEBUFFER_FORMAT: ${VEYON_FRAMEBUFFER_FORMAT:-jpeg}
+      VEYON_FRAMEBUFFER_WIDTH: ${VEYON_FRAMEBUFFER_WIDTH:-360}
+      VEYON_FRAMEBUFFER_HEIGHT: ${VEYON_FRAMEBUFFER_HEIGHT:-0}
+      VEYON_FRAMEBUFFER_JPEG_QUALITY: ${VEYON_FRAMEBUFFER_JPEG_QUALITY:-60}
+      VEYON_FRAMEBUFFER_POLL_INTERVAL_MS: ${VEYON_FRAMEBUFFER_POLL_INTERVAL_MS:-2000}
+      VEYON_ALLOWED_FEATURES_ADMIN: ${VEYON_ALLOWED_FEATURES_ADMIN:-screen_lock,input_devices_lock,user_logoff,reboot,power_down,text_message,open_website,start_app}
+      VEYON_ALLOWED_FEATURES_APPROVER: ${VEYON_ALLOWED_FEATURES_APPROVER:-screen_lock,input_devices_lock,user_logoff,text_message,open_website,start_app}
+      BUNDLE_PATH: /usr/local/bundle
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+      - app_storage:/app/storage
+      - app_tmp:/app/tmp
+      - app_log:/app/log
+    command: ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+
+  adminer:
+    image: adminer:4
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+
+  veyon-gateway:
+    build:
+      context: ./services/veyon-gateway
+      dockerfile: Dockerfile
+    image: qlpm-veyon-gateway:dev
+    restart: unless-stopped
+    environment:
+      GATEWAY_PORT: ${GATEWAY_PORT:-8088}
+      GATEWAY_API_KEY: ${VEYON_GATEWAY_API_KEY:-change-me}
+      VEYON_WEBAPI_BASE_URL: ${VEYON_WEBAPI_BASE_URL:-http://host.docker.internal:11080}
+      VEYON_DEFAULT_AUTH_METHOD: ${VEYON_DEFAULT_AUTH_METHOD:-auth_logon}
+      VEYON_AUTH_USERNAME: ${VEYON_AUTH_USERNAME:-}
+      VEYON_AUTH_PASSWORD: ${VEYON_AUTH_PASSWORD:-}
+      VEYON_AUTH_SIMPLE_PASSWORD: ${VEYON_AUTH_SIMPLE_PASSWORD:-}
+      VEYON_AUTH_KEYNAME: ${VEYON_AUTH_KEYNAME:-}
+      VEYON_AUTH_KEYDATA: ${VEYON_AUTH_KEYDATA:-}
+      VEYON_WEBAPI_INSECURE_SKIP_TLS_VERIFY: ${VEYON_WEBAPI_INSECURE_SKIP_TLS_VERIFY:-false}
+      GATEWAY_REQUEST_TIMEOUT_MS: ${GATEWAY_REQUEST_TIMEOUT_MS:-15000}
+      GATEWAY_CLEANUP_INTERVAL_MS: ${GATEWAY_CLEANUP_INTERVAL_MS:-30000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${VEYON_GATEWAY_FORWARD_PORT:-8088}:8088"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8088/v1/health >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_data:
+  bundle_cache:
+  app_storage:
+  app_tmp:
+  app_log:

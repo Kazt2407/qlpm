@@ -5,10 +5,13 @@
     <h1 class="text-3xl font-extrabold text-slate-900">Báo cáo vận hành</h1>
     <p class="mt-2 text-sm text-slate-500">Theo dõi hiệu suất mượn trả theo tháng, nguồn tạo, và nhóm người dùng.</p>
   </div>
-  <%= form_with url: reports_path, method: :get, class: "flex gap-3" do |f| %>
-    <%= f.select :month, @available_months.map { |m| [m.strftime("Tháng %m/%Y"), m.strftime("%Y-%m-01")] }, { selected: @month.strftime("%Y-%m-01") }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
-    <%= f.submit "Xem", class: "rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" %>
-  <% end %>
+  <div class="flex gap-3">
+    <%= form_with url: reports_path, method: :get, class: "flex gap-3" do |f| %>
+      <%= f.select :month, @available_months.map { |m| [m.strftime("Tháng %m/%Y"), m.strftime("%Y-%m-01")] }, { selected: @month.strftime("%Y-%m-01") }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      <%= f.submit "Xem", class: "rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" %>
+    <% end %>
+    <%= link_to "Tải báo cáo CSV", export_reports_path(month: @month.strftime("%Y-%m-01")), class: "rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" %>
+  </div>
 </div>
 
 <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -36,12 +39,12 @@
   </div>
 
   <div class="shell-card rounded-3xl border border-slate-200/70 p-6">
-    <h2 class="text-lg font-bold text-slate-900">Mức sẵn sàng theo loại asset</h2>
+    <h2 class="text-lg font-bold text-slate-900">Mức sẵn sàng theo loại đối tượng</h2>
     <div class="mt-6 space-y-4">
       <% @assets_by_type.each do |row| %>
         <div>
           <div class="mb-2 flex items-center justify-between text-sm">
-            <span class="font-medium text-slate-700"><%= row[:type] %></span>
+            <span class="font-medium text-slate-700"><%= Asset.asset_type_label_for(row[:type]) %></span>
             <span class="text-slate-500"><%= row[:pct] %>%</span>
           </div>
           <div class="h-3 rounded-full bg-slate-100">
@@ -59,7 +62,7 @@
     <div class="mt-5 space-y-3">
       <% @borrow_sources.each do |source, count| %>
         <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-          <span class="text-sm text-slate-600"><%= source %></span>
+          <span class="text-sm text-slate-600"><%= Borrow.source_label_for(source) %></span>
           <span class="font-semibold text-slate-900"><%= count %></span>
         </div>
       <% end %>
@@ -71,7 +74,7 @@
     <div class="mt-5 space-y-3">
       <% @borrower_mix.each do |kind, count| %>
         <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-          <span class="text-sm text-slate-600"><%= kind %></span>
+          <span class="text-sm text-slate-600"><%= Borrow.borrower_type_label_for(kind) %></span>
           <span class="font-semibold text-slate-900"><%= count %></span>
         </div>
       <% end %>
@@ -79,7 +82,7 @@
   </div>
 
   <div class="shell-card rounded-3xl border border-slate-200/70 p-6">
-    <h2 class="text-lg font-bold text-slate-900">Top người mượn</h2>
+    <h2 class="text-lg font-bold text-slate-900">Người mượn nhiều nhất</h2>
     <div class="mt-5 space-y-3">
       <% @top_borrowers.each do |(name, group), count| %>
         <div class="rounded-2xl bg-slate-50 px-4 py-3">
@@ -95,12 +98,12 @@
 </div>
 
 <div class="shell-card mt-6 rounded-3xl border border-slate-200/70 p-6">
-  <h2 class="text-lg font-bold text-slate-900">Asset cần chú ý</h2>
+  <h2 class="text-lg font-bold text-slate-900">Đối tượng cần chú ý</h2>
   <div class="mt-5 overflow-hidden rounded-2xl border border-slate-200">
     <table class="min-w-full divide-y divide-slate-200 text-sm">
       <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
         <tr>
-          <th class="px-4 py-3">Asset</th>
+          <th class="px-4 py-3">Đối tượng</th>
           <th class="px-4 py-3">Loại</th>
           <th class="px-4 py-3">Phòng</th>
           <th class="px-4 py-3">Trạng thái</th>

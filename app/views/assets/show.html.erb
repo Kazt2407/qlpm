@@ -18,12 +18,12 @@
     <h2 class="text-lg font-bold text-slate-900">Thông tin chính</h2>
     <div class="mt-5 space-y-3 text-sm">
       <div class="flex justify-between"><span class="text-slate-500">Loại</span><span class="font-medium text-slate-800"><%= @asset.asset_type_label %></span></div>
-      <div class="flex justify-between"><span class="text-slate-500">Category</span><span class="font-medium text-slate-800"><%= @asset.category %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Nhóm thiết bị</span><span class="font-medium text-slate-800"><%= @asset.category_label %></span></div>
       <div class="flex justify-between"><span class="text-slate-500">Phòng</span><span class="font-medium text-slate-800"><%= @asset.room_name || "–" %></span></div>
       <div class="flex justify-between"><span class="text-slate-500">Đối tượng cha</span><span class="font-medium text-slate-800"><%= @asset.parent&.code || "–" %></span></div>
-      <div class="flex justify-between"><span class="text-slate-500">Model</span><span class="font-medium text-slate-800"><%= @asset.model_code.presence || "–" %></span></div>
-      <div class="flex justify-between"><span class="text-slate-500">Serial</span><span class="font-medium text-slate-800"><%= @asset.serial_number.presence || "–" %></span></div>
-      <div class="flex justify-between"><span class="text-slate-500">IP</span><span class="font-medium text-slate-800"><%= @asset.ip_address.presence || "–" %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Mẫu mã</span><span class="font-medium text-slate-800"><%= @asset.model_code.presence || "–" %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Số sê-ri</span><span class="font-medium text-slate-800"><%= @asset.serial_number.presence || "–" %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Địa chỉ IP</span><span class="font-medium text-slate-800"><%= @asset.ip_address.presence || "–" %></span></div>
     </div>
 
     <% if @asset.notes.present? %>
@@ -54,9 +54,9 @@
             <tr>
               <td class="px-4 py-3">
                 <div class="font-semibold text-slate-900"><%= borrow.borrower_name %></div>
-                <div class="text-xs text-slate-500"><%= borrow.borrower_group.presence || borrow.borrower_type %></div>
+                <div class="text-xs text-slate-500"><%= borrow.borrower_group.presence || borrow.borrower_type_label %></div>
               </td>
-              <td class="px-4 py-3 text-slate-600"><%= borrow.borrow_source %></td>
+              <td class="px-4 py-3 text-slate-600"><%= borrow.borrow_source_label %></td>
               <td class="px-4 py-3 text-slate-600"><%= vn_datetime(borrow.starts_at) %> - <%= vn_datetime(borrow.ends_at) %></td>
               <td class="px-4 py-3"><%= status_badge(borrow.status_label, borrow.status_color) %></td>
             </tr>

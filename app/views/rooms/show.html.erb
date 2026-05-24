@@ -1,0 +1,62 @@
+<% content_for :title, @room.code %>
+
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <p class="text-sm text-slate-500"><%= link_to "Phòng máy", rooms_path, class: "hover:text-[#124170]" %> / <%= @room.code %></p>
+    <h1 class="mt-3 text-3xl font-extrabold text-slate-900"><%= @room.name %></h1>
+  </div>
+  <div class="flex gap-3">
+    <%= status_badge(@room.status_label, @room.status == "active" ? "emerald" : "gray") %>
+    <%= link_to "Chỉnh sửa", edit_room_path(@room), class: "rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50" %>
+  </div>
+</div>
+
+<div class="grid gap-6 xl:grid-cols-3">
+  <div class="shell-card rounded-3xl border border-slate-200/70 p-6">
+    <h2 class="text-lg font-bold text-slate-900">Thông tin phòng</h2>
+    <div class="mt-5 space-y-3 text-sm">
+      <div class="flex justify-between"><span class="text-slate-500">Mã</span><span class="font-medium text-slate-800"><%= @room.code %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Loại</span><span class="font-medium text-slate-800"><%= @room.room_type_label %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Sức chứa</span><span class="font-medium text-slate-800"><%= @room.capacity || "–" %></span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Vị trí</span><span class="font-medium text-slate-800"><%= @room.location.presence || "–" %></span></div>
+    </div>
+
+    <% if @room.notes.present? %>
+      <div class="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+        <p class="font-medium text-slate-800">Ghi chú</p>
+        <p class="mt-2"><%= @room.notes %></p>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="shell-card rounded-3xl border border-slate-200/70 p-6 xl:col-span-2">
+    <h2 class="text-lg font-bold text-slate-900">Đối tượng trong phòng</h2>
+    <div class="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Mã</th>
+            <th class="px-4 py-3">Tên</th>
+            <th class="px-4 py-3">Loại</th>
+            <th class="px-4 py-3">Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white">
+          <% @assets.each do |asset| %>
+            <tr>
+              <td class="px-4 py-3 font-semibold text-[#124170]"><%= asset.code %></td>
+              <td class="px-4 py-3 text-slate-700"><%= asset.name %></td>
+              <td class="px-4 py-3 text-slate-600"><%= asset.asset_type_label %></td>
+              <td class="px-4 py-3"><%= status_badge(asset.status_label, asset.status_color) %></td>
+            </tr>
+          <% end %>
+          <% if @assets.empty? %>
+            <tr>
+              <td colspan="4" class="px-4 py-10 text-center text-slate-500">Phòng này chưa có đối tượng liên kết.</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

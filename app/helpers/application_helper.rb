@@ -59,4 +59,12 @@ module ApplicationHelper
     base = "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors"
     active ? "#{base} bg-[#eaf2ff] text-[#124170] font-semibold" : "#{base} text-slate-600 hover:bg-slate-100 hover:text-slate-900"
   end
+
+  def pagination_per_page_options
+    AppSettings.pagination_options.map { |value| ["#{value} / trang", value] }
+  end
+
+  def selected_per_page_param(default = nil)
+    params[:per_page] || default || AppSettings.pagination_default_per_page
+  end
 end

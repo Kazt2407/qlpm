@@ -1,0 +1,11 @@
+<% content_for :title, "Tạo phòng" %>
+
+<div class="mx-auto max-w-5xl">
+  <div class="mb-6">
+    <h1 class="text-3xl font-extrabold text-slate-900">Tạo phòng mới</h1>
+    <p class="mt-2 text-sm text-slate-500">Khai báo phòng máy phục vụ quản lý tài nguyên.</p>
+  </div>
+  <div class="shell-card rounded-3xl border border-slate-200/70 p-6">
+    <%= render "form", room: @room %>
+  </div>
+</div>

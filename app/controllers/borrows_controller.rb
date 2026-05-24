@@ -1,39 +1,65 @@
 class BorrowsController < ApplicationController
-  before_action :set_borrow, only: %i[show edit update destroy confirm_return send_reminder]
+  before_action :set_borrow, only: %i[
+    show edit update destroy confirm_return send_reminder approve reject cancel
+  ]
+  before_action :require_request_submission_access!, only: %i[new create]
+  before_action :require_borrow_visibility!, only: %i[show]
+  before_action :require_admin!, only: %i[edit update destroy cancel send_reminder]
+  before_action :require_borrow_reviewer!, only: %i[confirm_return approve reject]
+
+  SORT_OPTIONS = {
+    "starts_desc" => { starts_at: :desc },
+    "starts_asc" => { starts_at: :asc },
+    "ends_desc" => { ends_at: :desc },
+    "ends_asc" => { ends_at: :asc },
+    "updated_desc" => { updated_at: :desc }
+  }.freeze
 
   def index
-    @borrows = current_user.admin? ? Borrow.includes(:asset, :created_by) : Borrow.includes(:asset, :created_by).where(created_by: current_user)
-    @borrows = case params[:tab]
-               when "active" then @borrows.active
-               when "returned"  then @borrows.returned
-               when "overdue"   then @borrows.overdue
-               else @borrows
-               end
-    @borrows = @borrows.recent
+    base_scope = can_review_borrows? ? Borrow.all : Borrow.where(created_by: current_user)
 
-    base_scope = current_user.admin? ? Borrow.all : Borrow.where(created_by: current_user)
+    @borrows = base_scope.includes(:asset, :created_by, :approved_by)
+    @borrows = apply_tab(@borrows)
+    @borrows = @borrows.with_state(params[:state])
+    @borrows = @borrows.with_source(params[:source])
+    @borrows = @borrows.for_asset(params[:asset_id])
+    @borrows = @borrows.borrower_like(params[:borrower_query])
+    @borrows = @borrows.starting_from(parse_datetime_param(params[:from]))
+    @borrows = @borrows.ending_before(parse_datetime_param(params[:to]))
+    @borrows = @borrows.order(sort_option)
+
+    @borrows, @page, @per_page, @total_pages, @total_count = paginate_scope(@borrows)
+
     @total_borrowing = base_scope.active.count
     @total_returned  = base_scope.returned.this_month.count
     @total_overdue   = base_scope.overdue.count
-    @active_tab      = params[:tab] || "all"
+    @total_pending   = base_scope.where(workflow_state: "pending").count
+    @total_approved  = base_scope.where(workflow_state: "approved").count
+
+    @active_tab = params[:tab].presence || "all"
+    @assets_for_filter = Asset.order(:asset_type, :code)
   end
 
   def new
     @borrow = Borrow.new(
       starts_at: Time.current.change(min: 0),
-      ends_at: 2.hours.from_now.change(min: 0),
-      borrow_source: current_user.admin? ? "manual_request" : "manual_request",
-      borrower_type: inferred_borrower_type
+      ends_at: AppSettings.borrow_default_duration_minutes.minutes.from_now.change(min: 0),
+      borrow_source: "manual_request",
+      workflow_state: "pending",
+      borrower_type: inferred_borrower_type,
+      asset_id: params[:asset_id]
     )
-    hydrate_borrower_from_user(@borrow) unless current_user.admin?
+
+    BorrowLifecycleService.apply_defaults!(@borrow, current_user) unless can_manage_system?
     load_form_data
   end
 
   def create
     @borrow = Borrow.new(borrow_params)
-    apply_context_defaults(@borrow)
+    BorrowLifecycleService.apply_defaults!(@borrow, current_user)
+
     if @borrow.save
-      @borrow.asset.update!(status: @borrow.asset.asset_type == "room" ? "in_use" : "borrowed")
+      BorrowLifecycleService.sync_asset_status!(@borrow.asset)
       redirect_to borrows_path, notice: "Phiếu mượn đã được tạo thành công."
     else
       load_form_data
@@ -44,18 +70,17 @@ class BorrowsController < ApplicationController
   def show; end
 
   def edit
-    restrict_borrow_access!
     load_form_data
   end
 
   def update
-    restrict_borrow_access!
     previous_asset = @borrow.asset
+    @borrow.assign_attributes(borrow_params)
+    BorrowLifecycleService.apply_defaults!(@borrow, current_user)
 
-    if @borrow.update(borrow_params)
-      apply_context_defaults(@borrow, persist: true)
-      previous_asset.update!(status: "active") if previous_asset != @borrow.asset && previous_asset.borrows.active.blank?
-      @borrow.asset.update!(status: @borrow.asset.asset_type == "room" ? "in_use" : "borrowed") if @borrow.returned_at.nil?
+    if @borrow.save
+      BorrowLifecycleService.sync_asset_status!(previous_asset) if previous_asset != @borrow.asset
+      BorrowLifecycleService.sync_asset_status!(@borrow.asset)
       redirect_to borrows_path, notice: "Cập nhật phiếu mượn thành công."
     else
       load_form_data
@@ -64,24 +89,49 @@ class BorrowsController < ApplicationController
   end
 
   def destroy
-    restrict_borrow_access!
     asset = @borrow.asset
     @borrow.destroy
-    asset.update!(status: "active") if asset.borrows.active.blank?
+    BorrowLifecycleService.sync_asset_status!(asset)
     redirect_to borrows_path, notice: "Đã xóa phiếu mượn."
   end
 
   def confirm_return
-    restrict_borrow_access!
-    @borrow.confirm_return!
+    BorrowLifecycleService.mark_returned!(@borrow)
     redirect_to borrows_path, notice: "Đã xác nhận trả thiết bị."
-  rescue => e
+  rescue StandardError => e
     redirect_to borrows_path, alert: "Lỗi: #{e.message}"
   end
 
+  def approve
+    if @borrow.can_approve?
+      BorrowLifecycleService.approve!(@borrow, current_user)
+      redirect_to borrows_path, notice: "Đã duyệt phiếu mượn."
+    else
+      redirect_to borrows_path, alert: "Phiếu không ở trạng thái chờ duyệt."
+    end
+  end
+
+  def reject
+    if @borrow.can_reject?
+      BorrowLifecycleService.reject!(@borrow)
+      redirect_to borrows_path, notice: "Đã từ chối phiếu mượn."
+    else
+      redirect_to borrows_path, alert: "Không thể từ chối phiếu ở trạng thái hiện tại."
+    end
+  end
+
+  def cancel
+    if @borrow.can_cancel?
+      BorrowLifecycleService.cancel!(@borrow)
+      redirect_to borrows_path, notice: "Đã hủy phiếu mượn."
+    else
+      redirect_to borrows_path, alert: "Không thể hủy phiếu ở trạng thái hiện tại."
+    end
+  end
+
   def send_reminder
-    # Placeholder: integrate email/SMS here
-    redirect_to borrows_path, notice: "Đã gửi nhắc nhở đến #{@borrow.borrower_name}."
+    BorrowLifecycleService.remind!(@borrow, channel: "email")
+    redirect_to borrows_path, notice: "Đã gửi nhắc nhở qua thư điện tử đến #{@borrow.borrower_name}."
   end
 
   private
@@ -92,54 +142,41 @@ class BorrowsController < ApplicationController
 
   def borrow_params
     allowed = %i[asset_id starts_at ends_at purpose notes]
-    if current_user.admin?
-      allowed += %i[borrow_source borrower_type borrower_name borrower_identifier borrower_group workflow_state approved_by_id]
+    if can_manage_system?
+      allowed += %i[
+        borrow_source borrower_type borrower_name borrower_identifier
+        borrower_group workflow_state approved_by_id
+      ]
     end
 
     params.require(:borrow).permit(*allowed)
   end
 
   def load_form_data
-    @available_assets = Asset.where.not(status: "inactive").order(:asset_type, :code)
-    @approvers = User.where(role: "admin").order(:full_name)
-  end
-
-  def apply_context_defaults(borrow, persist: false)
-    unless current_user.admin?
-      borrow.created_by = current_user
-      hydrate_borrower_from_user(borrow)
-      borrow.borrow_source = "manual_request"
-      borrow.workflow_state = borrow.returned_at.present? ? "returned" : "active"
-      borrow.approved_by ||= User.find_by(role: "admin")
-    end
-
-    if borrow.borrow_source == "imported_schedule"
-      borrow.borrower_type = "system"
-      borrow.borrower_name = "Hệ thống xếp lịch" if borrow.borrower_name.blank?
-      borrow.workflow_state = "approved" if borrow.workflow_state.blank?
-    end
-
-    if current_user.admin? && borrow.borrow_source == "manual_request" && borrow.workflow_state.blank?
-      borrow.workflow_state = borrow.returned_at.present? ? "returned" : "active"
-    end
-
-    borrow.save! if persist
-  end
-
-  def hydrate_borrower_from_user(borrow)
-    borrow.borrower_type = inferred_borrower_type
-    borrow.borrower_name = current_user.full_name
-    borrow.borrower_identifier = current_user.identifier
-    borrow.borrower_group = current_user.department
+    @available_assets = Asset.where.not(status: "inactive").or(Asset.where(id: @borrow.asset_id)).order(:asset_type, :code)
+    @approvers = User.active.where(role: %w[admin approver]).order(:full_name)
   end
 
   def inferred_borrower_type
     current_user.user_type.in?(%w[teacher student]) ? current_user.user_type : "teacher"
   end
 
-  def restrict_borrow_access!
-    return if current_user.admin? || @borrow.created_by == current_user
+  def require_borrow_visibility!
+    return if can_review_borrows? || @borrow.created_by == current_user
 
-    redirect_to borrows_path, alert: "Bạn không có quyền thao tác với phiếu này."
+    redirect_to borrows_path, alert: "Bạn không có quyền xem phiếu này."
+  end
+
+  def apply_tab(scope)
+    case params[:tab]
+    when "active" then scope.active
+    when "returned" then scope.returned
+    when "overdue" then scope.overdue
+    else scope
+    end
+  end
+
+  def sort_option
+    SORT_OPTIONS.fetch(params[:sort], SORT_OPTIONS["starts_desc"])
   end
 end

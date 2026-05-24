@@ -1,0 +1,50 @@
+<%= form_with model: room, class: "space-y-5" do |f| %>
+  <% if room.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <% room.errors.full_messages.each do |msg| %>
+        <div><%= msg %></div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <div>
+      <%= f.label :code, "Mã phòng", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.text_field :code, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :name, "Tên phòng", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.text_field :name, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-3">
+    <div>
+      <%= f.label :room_type, "Loại", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.select :room_type, Room.room_type_options, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :status, "Trạng thái", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.select :status, Room.status_options, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :capacity, "Sức chứa", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.number_field :capacity, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+  </div>
+
+  <div>
+    <%= f.label :location, "Vị trí", class: "mb-2 block text-sm font-medium text-slate-700" %>
+    <%= f.text_field :location, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+  </div>
+
+  <div>
+    <%= f.label :notes, "Ghi chú", class: "mb-2 block text-sm font-medium text-slate-700" %>
+    <%= f.text_area :notes, rows: 4, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+  </div>
+
+  <div class="flex gap-3">
+    <%= link_to "Hủy", rooms_path, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50" %>
+    <%= f.submit room.persisted? ? "Cập nhật" : "Tạo phòng", class: "rounded-2xl bg-[#124170] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0d3258]" %>
+  </div>
+<% end %>

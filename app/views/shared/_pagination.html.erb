@@ -1,0 +1,14 @@
+<% if total_pages > 1 %>
+  <div class="mt-5 flex items-center justify-between text-sm">
+    <p class="text-slate-500">
+      Trang <span class="font-semibold text-slate-700"><%= page %></span> / <%= total_pages %>
+      · Tổng <%= total_count %> bản ghi
+    </p>
+    <div class="flex items-center gap-2">
+      <% prev_params = request.query_parameters.merge(page: page - 1) %>
+      <% next_params = request.query_parameters.merge(page: page + 1) %>
+      <%= link_to "Trước", url_for(request.path_parameters.merge(prev_params)), class: "rounded-xl border border-slate-200 px-3 py-1.5 #{page <= 1 ? 'pointer-events-none opacity-40' : 'hover:bg-slate-50'}" %>
+      <%= link_to "Sau", url_for(request.path_parameters.merge(next_params)), class: "rounded-xl border border-slate-200 px-3 py-1.5 #{page >= total_pages ? 'pointer-events-none opacity-40' : 'hover:bg-slate-50'}" %>
+    </div>
+  </div>
+<% end %>

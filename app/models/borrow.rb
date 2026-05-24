@@ -2,10 +2,29 @@ class Borrow < ApplicationRecord
   belongs_to :asset
   belongs_to :created_by, class_name: "User", optional: true
   belongs_to :approved_by, class_name: "User", optional: true
+  has_many :veyon_actions, dependent: :nullify
 
   SOURCES = %w[manual_request imported_schedule].freeze
   BORROWER_TYPES = %w[system teacher student].freeze
   WORKFLOW_STATES = %w[pending approved rejected active returned cancelled overdue].freeze
+  SOURCE_LABELS = {
+    "manual_request" => "Yêu cầu thủ công",
+    "imported_schedule" => "Lịch nhập từ tệp"
+  }.freeze
+  BORROWER_TYPE_LABELS = {
+    "system" => "Hệ thống",
+    "teacher" => "Giáo viên",
+    "student" => "Sinh viên"
+  }.freeze
+  WORKFLOW_STATE_LABELS = {
+    "pending" => "Chờ duyệt",
+    "approved" => "Đã duyệt",
+    "rejected" => "Từ chối",
+    "active" => "Đang mượn",
+    "returned" => "Đã trả",
+    "cancelled" => "Đã hủy",
+    "overdue" => "Quá hạn"
+  }.freeze
 
   validates :borrower_name, presence: true
   validates :borrow_source, inclusion: { in: SOURCES }
@@ -21,6 +40,18 @@ class Borrow < ApplicationRecord
   scope :overdue,  -> { where(returned_at: nil, workflow_state: %w[approved active]).where("ends_at < ?", Time.current) }
   scope :recent,   -> { order(starts_at: :desc) }
   scope :this_month, -> { where(starts_at: Time.current.beginning_of_month..) }
+  scope :with_source, ->(source) { source.present? ? where(borrow_source: source) : all }
+  scope :with_state, ->(state) { state.present? ? where(workflow_state: state) : all }
+  scope :for_asset, ->(asset_id) { asset_id.present? ? where(asset_id: asset_id) : all }
+  scope :borrower_like, ->(query) {
+    if query.present?
+      where("borrower_name LIKE :q OR borrower_identifier LIKE :q OR borrower_group LIKE :q", q: "%#{query}%")
+    else
+      all
+    end
+  }
+  scope :starting_from, ->(from) { from.present? ? where("starts_at >= ?", from) : all }
+  scope :ending_before, ->(to) { to.present? ? where("ends_at <= ?", to) : all }
 
   def status
     return "cancelled" if workflow_state == "cancelled"
@@ -40,6 +71,18 @@ class Borrow < ApplicationRecord
       "cancelled" => "Đã hủy",
       "rejected" => "Từ chối"
     }[status]
+  end
+
+  def borrow_source_label
+    SOURCE_LABELS[borrow_source] || borrow_source
+  end
+
+  def borrower_type_label
+    BORROWER_TYPE_LABELS[borrower_type] || borrower_type
+  end
+
+  def workflow_state_label
+    WORKFLOW_STATE_LABELS[workflow_state] || workflow_state
   end
 
   def status_color
@@ -63,10 +106,47 @@ class Borrow < ApplicationRecord
   end
 
   def confirm_return!
-    transaction do
-      update!(returned_at: Time.current, workflow_state: "returned")
-      asset.update!(status: "active") if asset.status.in?(%w[borrowed in_use])
-    end
+    BorrowLifecycleService.mark_returned!(self)
+  end
+
+  def actionable_by_admin?
+    !workflow_state.in?(%w[returned rejected cancelled])
+  end
+
+  def can_approve?
+    workflow_state == "pending"
+  end
+
+  def can_reject?
+    workflow_state.in?(%w[pending approved active])
+  end
+
+  def can_cancel?
+    workflow_state.in?(%w[pending approved active])
+  end
+
+  def self.source_label_for(value)
+    SOURCE_LABELS[value] || value
+  end
+
+  def self.borrower_type_label_for(value)
+    BORROWER_TYPE_LABELS[value] || value
+  end
+
+  def self.workflow_state_label_for(value)
+    WORKFLOW_STATE_LABELS[value] || value
+  end
+
+  def self.source_options
+    SOURCES.map { |value| [source_label_for(value), value] }
+  end
+
+  def self.borrower_type_options
+    BORROWER_TYPES.map { |value| [borrower_type_label_for(value), value] }
+  end
+
+  def self.workflow_state_options
+    WORKFLOW_STATES.map { |value| [workflow_state_label_for(value), value] }
   end
 
   private

@@ -1,6 +1,14 @@
 class AssetsController < ApplicationController
   before_action :set_asset, only: %i[show edit update destroy]
-  before_action :require_admin!, except: %i[index show]
+  before_action :require_admin!
+
+  SORT_OPTIONS = {
+    "code_asc" => { code: :asc },
+    "code_desc" => { code: :desc },
+    "name_asc" => { name: :asc },
+    "name_desc" => { name: :desc },
+    "updated_desc" => { updated_at: :desc }
+  }.freeze
 
   def index
     @assets = Asset.includes(:room, :parent)
@@ -9,7 +17,8 @@ class AssetsController < ApplicationController
     @assets = @assets.where(category: params[:category]) if params[:category].present?
     @assets = @assets.where(status: params[:status]) if params[:status].present?
     @assets = @assets.where(room_id: params[:room_id]) if params[:room_id].present?
-    @assets = @assets.order(:asset_type, :code)
+    @assets = @assets.order(sort_option)
+    @assets, @page, @per_page, @total_pages, @total_count = paginate_scope(@assets)
 
     @asset_types = Asset::ASSET_TYPES
     @categories = Asset::CATEGORIES
@@ -71,5 +80,9 @@ class AssetsController < ApplicationController
       :brand, :model_code, :serial_number, :imported_at, :warranty_until,
       :desk_number, :cpu, :ram, :storage, :os, :ip_address, :notes
     )
+  end
+
+  def sort_option
+    SORT_OPTIONS.fetch(params[:sort], { asset_type: :asc, code: :asc })
   end
 end

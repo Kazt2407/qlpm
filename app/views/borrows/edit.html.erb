@@ -1,10 +1,12 @@
 <% content_for :title, "Cập nhật phiếu mượn" %>
 
 <div class="mx-auto max-w-5xl">
-  <div class="mb-6">
-    <h1 class="text-3xl font-extrabold text-slate-900">Cập nhật phiếu #BR-<%= @borrow.id.to_s.rjust(5, "0") %></h1>
-    <p class="mt-2 text-sm text-slate-500">Điều chỉnh trạng thái, thời gian, hoặc người mượn cho phiếu hiện tại.</p>
+  <div class="mb-6 rounded-3xl border border-slate-200/70 bg-gradient-to-r from-slate-800 to-slate-600 p-6 text-white shell-card">
+    <p class="text-xs uppercase tracking-[0.25em] text-slate-200">Điều phối phiếu mượn</p>
+    <h1 class="mt-2 text-3xl font-extrabold">Cập nhật phiếu #BR-<%= @borrow.id.to_s.rjust(5, "0") %></h1>
+    <p class="mt-2 text-sm text-slate-100">Điều chỉnh thông tin người mượn, thời gian hoặc trạng thái để phản ánh đúng thực tế sử dụng.</p>
   </div>
+
   <div class="shell-card rounded-3xl border border-slate-200/70 p-6">
     <%= render "form", borrow: @borrow %>
   </div>

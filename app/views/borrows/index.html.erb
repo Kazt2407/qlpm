@@ -1,78 +1,179 @@
 <% content_for :title, "Lịch mượn và trả" %>
+<%
+  is_approver = current_user.approver?
+  is_requester = requester_user?
 
-<div class="mb-8 flex items-start justify-between">
-  <div>
-    <h1 class="text-3xl font-extrabold text-slate-900">Lịch mượn và trả</h1>
-    <p class="mt-2 text-sm text-slate-500">Theo dõi yêu cầu thủ công, lịch import, và thời gian trả thực tế.</p>
-  </div>
-  <%= link_to "Tạo phiếu mượn", new_borrow_path, class: "rounded-2xl bg-[#124170] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0d3258]" %>
-</div>
+  role_title = if is_approver
+    "Hàng chờ duyệt phiếu mượn"
+  elsif is_requester
+    "Phiếu mượn của tôi"
+  else
+    "Lịch mượn và trả"
+  end
 
-<div class="grid gap-5 md:grid-cols-3">
-  <% [["Đang mở", @total_borrowing, "amber"], ["Đã trả tháng này", @total_returned, "emerald"], ["Quá hạn", @total_overdue, "red"]].each do |label, value, color| %>
-    <div class="shell-card rounded-3xl border border-slate-200/70 p-5">
-      <p class="text-sm text-slate-500"><%= label %></p>
-      <div class="mt-4 flex items-center justify-between">
-        <p class="text-4xl font-extrabold text-slate-900"><%= value %></p>
-        <%= status_badge(label, color) %>
-      </div>
+%>
+
+<div class="mb-6 rounded-3xl border border-slate-200/70 bg-gradient-to-r from-[#124170] to-[#3f7baa] p-6 text-white shell-card">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-extrabold"><%= role_title %></h1>
     </div>
-  <% end %>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <% if can_manage_system? || is_requester %>
+        <%= link_to "Tạo phiếu mượn", new_borrow_path, class: "rounded-2xl border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/20" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="mt-5 flex flex-wrap gap-2">
+    <% tab_items = [
+      ["all", "Tất cả", @total_count],
+      ["active", "Đang mở", @total_borrowing],
+      ["returned", "Đã trả", @total_returned],
+      ["overdue", "Quá hạn", @total_overdue]
+    ] %>
+    <% tab_items.each do |tab, label, count| %>
+      <% active = @active_tab == tab %>
+      <%= link_to borrows_path(request.query_parameters.merge(tab: tab, page: nil)),
+          class: "rounded-2xl border px-4 py-2 text-sm font-medium #{active ? 'border-white bg-white text-[#124170]' : 'border-white/35 bg-transparent text-white hover:bg-white/10'}" do %>
+        <span><%= label %></span>
+        <span class="ml-2 inline-flex min-w-6 justify-center font-semibold"><%= count %></span>
+      <% end %>
+    <% end %>
+  </div>
 </div>
 
-<div class="mt-6 flex gap-2">
-  <% [["all", "Tất cả"], ["active", "Đang mở"], ["returned", "Đã trả"], ["overdue", "Quá hạn"]].each do |tab, label| %>
-    <%= link_to label, borrows_path(tab: tab), class: "rounded-2xl px-4 py-2 text-sm font-medium #{@active_tab == tab ? 'bg-[#124170] text-white' : 'bg-white text-slate-600 border border-slate-200'}" %>
+<div class="shell-card mt-6 rounded-3xl border border-slate-200/70 p-5">
+  <%= form_with url: borrows_path, method: :get, class: "grid gap-3 #{is_requester ? 'md:grid-cols-3' : 'md:grid-cols-4'}" do |f| %>
+    <%= f.hidden_field :tab, value: @active_tab %>
+
+    <% unless is_requester %>
+      <%= f.text_field :borrower_query, value: params[:borrower_query], placeholder: "Tên người mượn / mã định danh", class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      <%= f.select :source, [["Tất cả nguồn", ""]] + Borrow.source_options, { selected: params[:source] }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <% end %>
+
+    <%= f.select :state, [["Tất cả trạng thái xử lý", ""]] + Borrow.workflow_state_options, { selected: params[:state] }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.select :asset_id, [["Tất cả đối tượng", ""]] + @assets_for_filter.map { |a| ["#{a.code} - #{a.name}", a.id] }, { selected: params[:asset_id] }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+
+    <%= f.datetime_local_field :from, value: params[:from], class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.datetime_local_field :to, value: params[:to], class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.select :sort, [["Mới nhất", "starts_desc"], ["Cũ nhất", "starts_asc"], ["Kết thúc xa nhất", "ends_desc"], ["Kết thúc gần nhất", "ends_asc"]], { selected: params[:sort] || "starts_desc" }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+
+    <div class="flex gap-2">
+      <%= f.select :per_page, pagination_per_page_options, { selected: selected_per_page_param }, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      <%= f.submit "Lọc", class: "rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" %>
+    </div>
   <% end %>
 </div>
 
 <div class="shell-card mt-6 overflow-hidden rounded-3xl border border-slate-200/70">
   <table class="min-w-full divide-y divide-slate-200 text-sm">
     <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
-      <tr>
-        <th class="px-4 py-3">Asset</th>
-        <th class="px-4 py-3">Người mượn</th>
-        <th class="px-4 py-3">Nguồn</th>
-        <th class="px-4 py-3">Thời gian</th>
-        <th class="px-4 py-3">Trạng thái</th>
-        <th class="px-4 py-3">Thao tác</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-slate-100 bg-white">
-      <% @borrows.each do |borrow| %>
+      <% if is_requester %>
         <tr>
-          <td class="px-4 py-3">
-            <div class="font-semibold text-slate-900"><%= borrow.asset.name %></div>
-            <div class="text-xs text-slate-500"><%= borrow.asset.code %></div>
-          </td>
-          <td class="px-4 py-3">
-            <div class="font-medium text-slate-800"><%= borrow.borrower_name %></div>
-            <div class="text-xs text-slate-500"><%= borrow.borrower_group.presence || borrow.borrower_type %></div>
-          </td>
-          <td class="px-4 py-3 text-slate-600"><%= borrow.borrow_source %></td>
-          <td class="px-4 py-3 text-slate-600">
-            <%= vn_datetime(borrow.starts_at) %><br>
-            <span class="text-xs text-slate-400">đến <%= vn_datetime(borrow.ends_at) %></span>
-          </td>
-          <td class="px-4 py-3"><%= status_badge(borrow.status_label, borrow.status_color) %></td>
-          <td class="px-4 py-3">
-            <div class="flex flex-wrap gap-2">
-              <%= link_to "Xem", borrow_path(borrow), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50" %>
-              <% if current_user.admin? || borrow.created_by == current_user %>
-                <%= link_to "Sửa", edit_borrow_path(borrow), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50" %>
-              <% end %>
-              <% if borrow.returned_at.nil? && (current_user.admin? || borrow.created_by == current_user) %>
-                <%= button_to "Xác nhận trả", confirm_return_borrow_path(borrow), method: :patch, class: "rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700" %>
-              <% end %>
-            </div>
-          </td>
+          <th class="px-4 py-3">Phiếu</th>
+          <th class="px-4 py-3">Đối tượng</th>
+          <th class="px-4 py-3">Khung giờ</th>
+          <th class="px-4 py-3">Trạng thái</th>
+          <th class="px-4 py-3">Theo dõi</th>
+        </tr>
+      <% else %>
+        <tr>
+          <th class="px-4 py-3">Đối tượng</th>
+          <th class="px-4 py-3">Người mượn</th>
+          <th class="px-4 py-3">Nguồn</th>
+          <th class="px-4 py-3">Thời gian</th>
+          <th class="px-4 py-3">Trạng thái</th>
+          <th class="px-4 py-3">Thao tác</th>
         </tr>
       <% end %>
+    </thead>
+
+    <tbody class="divide-y divide-slate-100 bg-white">
+      <% @borrows.each do |borrow| %>
+        <% if is_requester %>
+          <tr>
+            <td class="px-4 py-3">
+              <div class="font-semibold text-[#124170]">#BR-<%= borrow.id.to_s.rjust(5, "0") %></div>
+              <div class="text-xs text-slate-500"><%= borrow.borrow_source_label %></div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="font-semibold text-slate-900"><%= borrow.asset.name %></div>
+              <div class="text-xs text-slate-500"><%= borrow.asset.code %></div>
+            </td>
+            <td class="px-4 py-3 text-slate-600">
+              <%= vn_datetime(borrow.starts_at) %><br>
+              <span class="text-xs text-slate-400">đến <%= vn_datetime(borrow.ends_at) %></span>
+            </td>
+            <td class="px-4 py-3"><%= status_badge(borrow.status_label, borrow.status_color) %></td>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <%= link_to "Xem", borrow_path(borrow), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50" %>
+              </div>
+            </td>
+          </tr>
+        <% else %>
+          <tr>
+            <td class="px-4 py-3">
+              <div class="font-semibold text-slate-900"><%= borrow.asset.name %></div>
+              <div class="text-xs text-slate-500"><%= borrow.asset.code %></div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="font-medium text-slate-800"><%= borrow.borrower_name %></div>
+              <div class="text-xs text-slate-500"><%= borrow.borrower_group.presence || borrow.borrower_type_label %></div>
+            </td>
+            <td class="px-4 py-3 text-slate-600"><%= borrow.borrow_source_label %></td>
+            <td class="px-4 py-3 text-slate-600">
+              <%= vn_datetime(borrow.starts_at) %><br>
+              <span class="text-xs text-slate-400">đến <%= vn_datetime(borrow.ends_at) %></span>
+            </td>
+            <td class="px-4 py-3"><%= status_badge(borrow.status_label, borrow.status_color) %></td>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap gap-2">
+                <%= link_to "Xem", borrow_path(borrow), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50" %>
+
+                <% if can_manage_system? %>
+                  <%= link_to "Sửa", edit_borrow_path(borrow), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50" %>
+                <% end %>
+
+                <% if borrow.returned_at.nil? && can_review_borrows? %>
+                  <%= button_to "Trả", confirm_return_borrow_path(borrow), method: :patch, class: "rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700" %>
+                <% end %>
+
+                <% if can_review_borrows? %>
+                  <% if borrow.can_approve? %>
+                    <%= button_to "Duyệt", approve_borrow_path(borrow), method: :patch, class: "rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700" %>
+                  <% end %>
+                  <% if borrow.can_reject? %>
+                    <%= button_to "Từ chối", reject_borrow_path(borrow), method: :patch, class: "rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-700" %>
+                  <% end %>
+                  <% if borrow.asset.veyon_host.present? %>
+                    <%= link_to "Điều khiển máy", veyon_host_path(borrow.asset.veyon_host, borrow_id: borrow.id), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50" %>
+                  <% end %>
+                <% end %>
+
+                <% if can_manage_system? %>
+                  <% if borrow.can_cancel? %>
+                    <%= button_to "Hủy", cancel_borrow_path(borrow), method: :patch, class: "rounded-xl bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800" %>
+                  <% end %>
+                  <% if borrow.overdue? && borrow.returned_at.nil? %>
+                    <%= button_to "Nhắc qua thư điện tử", send_reminder_borrow_path(borrow), method: :post, class: "rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100" %>
+                  <% end %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+
       <% if @borrows.empty? %>
         <tr>
-          <td colspan="6" class="px-4 py-12 text-center text-slate-500">Chưa có phiếu mượn phù hợp.</td>
+          <td colspan="<%= is_requester ? 5 : 6 %>" class="px-4 py-12 text-center text-slate-500">Chưa có phiếu mượn phù hợp.</td>
         </tr>
       <% end %>
     </tbody>
   </table>
 </div>
+
+<%= render "shared/pagination", page: @page, total_pages: @total_pages, total_count: @total_count %>

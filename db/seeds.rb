@@ -15,6 +15,15 @@ users = {
     identifier: "ADM-001",
     department: "CNTT"
   ),
+  approver: User.create!(
+    full_name: "Phan Minh Duy",
+    email: "duy.approver@school.edu.vn",
+    role: "approver",
+    user_type: "teacher",
+    password: "password123",
+    identifier: "DUYET-001",
+    department: "Phòng thiết bị"
+  ),
   teacher: User.create!(
     full_name: "Trần Thị Bình",
     email: "binh.teacher@school.edu.vn",
@@ -257,4 +266,27 @@ Borrow.create!(
 )
 
 puts "  Created #{Borrow.count} borrows"
+
+if defined?(VeyonHost)
+  VeyonHost.delete_all
+
+  VeyonHost.create!(
+    asset: assets[:pc_a_01],
+    host: "pc-a-001.school.local",
+    service_port: 11_100,
+    enabled: true,
+    metadata_json: { room: "LAB-A", note: "Máy đầu dãy A" }
+  )
+
+  VeyonHost.create!(
+    asset: assets[:pc_b_01],
+    host: "pc-b-001.school.local",
+    service_port: 11_100,
+    enabled: true,
+    metadata_json: { room: "LAB-B", note: "Máy demo điều khiển" }
+  )
+
+  puts "  Created #{VeyonHost.count} veyon hosts"
+end
+
 puts "Done! Database rebuilt successfully."
