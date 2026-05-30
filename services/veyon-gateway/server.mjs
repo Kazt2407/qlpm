@@ -8,6 +8,8 @@ const UPSTREAM_BASE_URL = String(process.env.VEYON_WEBAPI_BASE_URL || "http://ho
 const REQUEST_TIMEOUT_MS = Number(process.env.GATEWAY_REQUEST_TIMEOUT_MS || 15000);
 const CLEANUP_INTERVAL_MS = Number(process.env.GATEWAY_CLEANUP_INTERVAL_MS || 30000);
 const REUSE_SKEW_MS = Number(process.env.GATEWAY_REUSE_SKEW_MS || 5000);
+const FRAMEBUFFER_RETRY_ATTEMPTS = Number(process.env.GATEWAY_FRAMEBUFFER_RETRY_ATTEMPTS || 8);
+const FRAMEBUFFER_RETRY_DELAY_MS = Number(process.env.GATEWAY_FRAMEBUFFER_RETRY_DELAY_MS || 500);
 
 const DEFAULT_AUTH_METHOD = String(process.env.VEYON_DEFAULT_AUTH_METHOD || "auth_logon");
 
@@ -80,6 +82,10 @@ function connectionKey(host, authMethod, credentials) {
 
 function nowMs() {
   return Date.now();
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function parseTimeMs(value) {
@@ -242,6 +248,10 @@ function logUpstreamFailure(operation, upstream) {
   );
 }
 
+function isFramebufferPending(upstream) {
+  return upstream?.status === 503 && String(upstream?.json?.error?.code || "") === "10";
+}
+
 async function fetchFramebuffer(connection, { format, width, height, quality }) {
   const upstream = await upstreamRequest("GET", "/api/v1/framebuffer", {
     headers: { "Connection-Uid": connection.uid },
@@ -260,6 +270,21 @@ async function fetchFramebuffer(connection, { format, width, height, quality }) 
   }
 
   upstream.framebufferFormat = format;
+  return upstream;
+}
+
+async function fetchFramebufferWithWarmup(connection, options) {
+  let upstream;
+
+  for (let attempt = 1; attempt <= FRAMEBUFFER_RETRY_ATTEMPTS; attempt += 1) {
+    upstream = await fetchFramebuffer(connection, options);
+    if (!isFramebufferPending(upstream)) {
+      return upstream;
+    }
+
+    await sleep(FRAMEBUFFER_RETRY_DELAY_MS);
+  }
+
   return upstream;
 }
 
@@ -562,10 +587,10 @@ const server = http.createServer(async (req, res) => {
       const quality = toIntegerOrUndefined(searchParams.get("quality"));
 
       const result = await callWithConnection(host, async (connection) => {
-        let upstream = await fetchFramebuffer(connection, { format, width, height, quality });
+        let upstream = await fetchFramebufferWithWarmup(connection, { format, width, height, quality });
 
         if (!upstream.ok && format === "jpeg" && upstream.status === 503) {
-          upstream = await fetchFramebuffer(connection, { format: "png", width, height, quality: undefined });
+          upstream = await fetchFramebufferWithWarmup(connection, { format: "png", width, height, quality: undefined });
         }
 
         if (!upstream.ok) {
