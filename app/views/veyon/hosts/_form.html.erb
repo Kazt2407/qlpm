@@ -1,4 +1,7 @@
-<%= form_with model: [:veyon, @veyon_host], class: "space-y-4" do |f| %>
+<% form_url = @veyon_host.persisted? ? veyon_host_path(@veyon_host) : veyon_hosts_path %>
+<% form_method = @veyon_host.persisted? ? :patch : :post %>
+
+<%= form_with model: @veyon_host, url: form_url, method: form_method, class: "space-y-4" do |f| %>
   <% if @veyon_host.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
       <p class="font-semibold">Không thể lưu cấu hình:</p>
