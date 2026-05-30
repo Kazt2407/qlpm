@@ -154,12 +154,12 @@ function buildUpstreamUrl(pathname, query = {}) {
   return url;
 }
 
-async function upstreamRequest(method, pathname, { headers = {}, query = {}, jsonBody, binary = false } = {}) {
+async function upstreamRequest(method, pathname, { headers = {}, query = {}, jsonBody, binary = false, accept } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   const requestHeaders = {
-    Accept: "application/json",
+    Accept: accept || (binary ? "image/jpeg,image/png,*/*" : "application/json"),
     ...headers
   };
 
@@ -181,12 +181,23 @@ async function upstreamRequest(method, pathname, { headers = {}, query = {}, jso
 
     if (binary) {
       const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const text = response.ok ? null : buffer.toString("utf8");
+      let json = null;
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch (_error) {
+        json = null;
+      }
+
       return {
         ok: response.ok,
         status: response.status,
         headers: response.headers,
         contentType,
-        buffer: Buffer.from(arrayBuffer)
+        buffer,
+        text,
+        json
       };
     }
 
@@ -221,6 +232,13 @@ function normalizeUpstreamError(upstream, fallbackCode = "upstream_error", fallb
     message,
     upstream_status: upstream?.status || 0
   };
+}
+
+function logUpstreamFailure(operation, upstream) {
+  const body = upstream?.text ? upstream.text.replace(/\s+/g, " ").slice(0, 300) : "";
+  console.error(
+    `[veyon-gateway] ${operation} upstream failed: status=${upstream?.status || 0} content-type=${upstream?.contentType || ""}${body ? ` body=${body}` : ""}`
+  );
 }
 
 async function authenticateHost(host, authMethod, credentials) {
@@ -529,10 +547,12 @@ const server = http.createServer(async (req, res) => {
             height,
             quality
           },
-          binary: true
+          binary: true,
+          accept: format === "png" ? "image/png,*/*" : "image/jpeg,*/*"
         });
 
         if (!upstream.ok) {
+          logUpstreamFailure("framebuffer", upstream);
           return {
             ok: false,
             status: upstream.status || 502,

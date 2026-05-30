@@ -1,6 +1,7 @@
 require "net/http"
 require "uri"
 require "json"
+require "cgi"
 
 module Veyon
   class GatewayClient
@@ -66,7 +67,7 @@ module Veyon
       payload = { active: !!active }
       payload[:arguments] = arguments if arguments.present?
 
-      request_json(:post, "/v1/hosts/#{host}/features/#{feature_key}", body: payload)
+      request_json(:post, "/v1/hosts/#{path_segment(host)}/features/#{path_segment(feature_key)}", body: payload)
     end
 
     def framebuffer(host:, format: "jpeg", width: nil, height: nil, quality: nil)
@@ -77,15 +78,15 @@ module Veyon
         quality: quality
       }.compact
 
-      request_binary(:get, "/v1/hosts/#{host}/framebuffer", params: params)
+      request_binary(:get, "/v1/hosts/#{path_segment(host)}/framebuffer", params: params)
     end
 
     def user_info(host)
-      request_json(:get, "/v1/hosts/#{host}/user")
+      request_json(:get, "/v1/hosts/#{path_segment(host)}/user")
     end
 
     def session_info(host)
-      request_json(:get, "/v1/hosts/#{host}/session")
+      request_json(:get, "/v1/hosts/#{path_segment(host)}/session")
     end
 
     private
@@ -106,7 +107,16 @@ module Veyon
     end
 
     def request_binary(method, path, params: nil)
-      perform_request(method, path, params: params)
+      response = perform_request(method, path, params: params)
+
+      unless response.success?
+        parsed = parse_json(response.raw_body)
+        response.error_code = parsed&.dig("error", "code")&.to_s
+        response.error_message = parsed&.dig("error", "message") || response.error_message
+        response.body = parsed || {}
+      end
+
+      response
     end
 
     def perform_request(method, path, params: nil, body: nil)
@@ -160,6 +170,10 @@ module Veyon
       uri = URI.parse("#{@base_url}#{path}")
       uri.query = URI.encode_www_form(params) if params.present?
       uri
+    end
+
+    def path_segment(value)
+      CGI.escape(value.to_s)
     end
 
     def request_class_for(method)
