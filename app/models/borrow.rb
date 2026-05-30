@@ -33,11 +33,13 @@ class Borrow < ApplicationRecord
   validates :starts_at, presence: true
   validates :ends_at, presence: true
   validate  :ends_at_after_starts_at
+  validate  :asset_must_be_borrowable
   validate  :asset_available_for_time_window
 
-  scope :active,   -> { where(returned_at: nil, workflow_state: %w[approved active]).where("ends_at >= ?", Time.current) }
+  scope :active,   -> { currently_active }
   scope :returned, -> { where.not(returned_at: nil) }
   scope :overdue,  -> { where(returned_at: nil, workflow_state: %w[approved active]).where("ends_at < ?", Time.current) }
+  scope :scheduled, -> { where(returned_at: nil, workflow_state: %w[approved active]).where("starts_at > ?", Time.current) }
   scope :recent,   -> { order(starts_at: :desc) }
   scope :this_month, -> { where(starts_at: Time.current.beginning_of_month..) }
   scope :with_source, ->(source) { source.present? ? where(borrow_source: source) : all }
@@ -52,6 +54,10 @@ class Borrow < ApplicationRecord
   }
   scope :starting_from, ->(from) { from.present? ? where("starts_at >= ?", from) : all }
   scope :ending_before, ->(to) { to.present? ? where("ends_at <= ?", to) : all }
+  scope :currently_active, -> {
+    where(returned_at: nil, workflow_state: %w[approved active])
+      .where("starts_at <= ? AND ends_at >= ?", Time.current, Time.current)
+  }
 
   def status
     return "cancelled" if workflow_state == "cancelled"
@@ -59,12 +65,14 @@ class Borrow < ApplicationRecord
     return "pending" if workflow_state == "pending"
     return "returned" if returned_at.present?
     return "overdue" if ends_at < Time.current
+    return "scheduled" if starts_at > Time.current
     "active"
   end
 
   def status_label
     {
       "pending" => "Chờ duyệt",
+      "scheduled" => "Đã lên lịch",
       "active" => "Đang mượn",
       "returned" => "Đã trả",
       "overdue" => "Quá hạn",
@@ -88,6 +96,7 @@ class Borrow < ApplicationRecord
   def status_color
     {
       "pending" => "sky",
+      "scheduled" => "indigo",
       "active" => "amber",
       "returned" => "emerald",
       "overdue" => "red",
@@ -123,6 +132,10 @@ class Borrow < ApplicationRecord
 
   def can_cancel?
     workflow_state.in?(%w[pending approved active])
+  end
+
+  def can_return?
+    returned_at.blank? && workflow_state.in?(%w[approved active overdue])
   end
 
   def self.source_label_for(value)
@@ -167,5 +180,13 @@ class Borrow < ApplicationRecord
     return unless overlapping.exists?
 
     errors.add(:asset_id, "đã có lịch sử dụng trùng thời gian")
+  end
+
+  def asset_must_be_borrowable
+    return if asset.blank?
+    return if returned_at.present? || workflow_state.in?(%w[returned rejected cancelled])
+    return if asset.status.in?(%w[active borrowed in_use])
+
+    errors.add(:asset_id, "không sẵn sàng để mượn")
   end
 end

@@ -12,7 +12,7 @@
 - Mặc định WebAPI tắt, port mặc định `11080`.
 - Port Veyon Server mặc định `11100` (demo server `11400`).
 
-## 3) Kiến trúc đích (đề xuất triển khai thực tế)
+## 3) Kiến trúc hiện tại trong monorepo demo
 
 ```mermaid
 flowchart LR
@@ -24,8 +24,9 @@ flowchart LR
   W --> Cn[Client n: Veyon Service]
 
   R --> DB[(MySQL)]
-  G --> REDIS[(Redis cache/session)]
 ```
+
+Trong repo hiện tại, `Rails QLPM`, `Veyon Gateway API`, `MySQL`, `Adminer`, `phpMyAdmin`, và test runner được điều phối bằng `docker-compose.yml` ở thư mục gốc. Chạy demo bằng `ruby bin/demo` và chạy test bằng `ruby bin/test`.
 
 ## 4) Vai trò từng thành phần
 - `Rails QLPM`:
@@ -33,10 +34,10 @@ flowchart LR
   - Quản lý nghiệp vụ mượn/trả.
   - Gửi lệnh điều khiển Veyon qua Gateway.
   - Ghi nhật ký/audit.
-- `Veyon Gateway API` (service mới):
+- `Veyon Gateway API` (`services/veyon-gateway`):
   - Quản lý `connection-uid` theo host.
-  - Chuẩn hóa retry/timeout/circuit breaker khi gọi WebAPI.
-  - Ẩn thông tin bí mật (private key, tài khoản hệ thống) khỏi Rails/UI.
+  - Chuẩn hóa timeout khi gọi WebAPI.
+  - Ẩn thông tin bí mật (private key, tài khoản hệ thống) khỏi UI.
   - Trả ảnh framebuffer đã nén đúng profile cho UI.
 - `Veyon WebAPI Proxy`:
   - Điểm vào duy nhất cho điều khiển máy trạm.
@@ -59,7 +60,7 @@ flowchart LR
 ### 5.2 Luồng xem thumbnail màn hình
 1. UI poll mỗi 1-3 giây (hoặc SSE) danh sách ảnh thu nhỏ.
 2. Rails yêu cầu Gateway lấy framebuffer theo kích thước chuẩn (`width/height`, JPEG quality).
-3. Gateway trả về ảnh đã nén, có cache ngắn hạn (0.5-2 giây) để giảm tải.
+3. Gateway trả về ảnh đã nén từ WebAPI. Cache ngắn hạn (0.5-2 giây) là hướng tối ưu tiếp theo khi số lượng máy tăng.
 4. UI render lưới máy theo phòng/lớp.
 
 ## 6) API contract giữa Rails và Gateway
@@ -86,7 +87,7 @@ Các endpoint cốt lõi:
   - Không điều khiển máy.
   - Chỉ tạo phiếu và theo dõi phiếu của chính mình.
 
-## 8) Mô hình dữ liệu cần bổ sung (đề xuất)
+## 8) Mô hình dữ liệu đã triển khai
 
 ### 8.1 Bảng `veyon_hosts`
 - `id`
@@ -110,6 +111,7 @@ Các endpoint cốt lõi:
 - `error_code`
 - `error_message`
 - `created_at`
+- `updated_at`
 
 ### 8.3 Bảng `veyon_snapshots` (tùy chọn)
 - `id`
@@ -141,30 +143,29 @@ Các endpoint cốt lõi:
 ## 11) Triển khai Docker cho môi trường demo
 - `mysql`: dữ liệu nghiệp vụ.
 - `app` (Rails): UI + nghiệp vụ.
-- `redis`: cache + queue (nếu bật worker).
 - `veyon-gateway`: API trung gian.
-- `adminer` (tùy chọn).
+- `adminer`, `phpmyadmin`: công cụ xem MySQL.
+- `test` profile: chạy Rails test suite trong container.
 
 Ghi chú:
 - WebAPI Proxy thuộc phía hạ tầng Veyon, có thể đặt trên máy gateway riêng trong LAN.
-- Với demo nhỏ: có thể chạy Gateway và Rails cùng host, nhưng vẫn giữ tách process.
+- Với demo nhỏ: Gateway và Rails chạy cùng Docker network nhưng vẫn tách process.
 
-## 12) Kế hoạch triển khai 3 phase
+## 12) Trạng thái triển khai
 
-### Phase A (2-4 ngày) - Control foundation
-- Tạo service `veyon-gateway` với các endpoint open/auth/feature/framebuffer.
-- Thêm env cấu hình vào QLPM.
-- Thêm bảng `veyon_hosts`, `veyon_actions`.
+Đã có:
+- Gateway service với health, connection, feature, framebuffer, user, session endpoints.
+- Rails client `Veyon::GatewayClient`.
+- CRUD host mapping cho admin.
+- Màn hình host detail, live framebuffer, thao tác điều khiển, và audit log.
+- RBAC: `admin` quản lý host và điều khiển; `approver` xem/điều khiển theo feature allowlist; `teacher/student` không truy cập module.
+- Test coverage cho quyền truy cập, thao tác hợp lệ, thao tác bị chặn, payload thiếu, và audit borrow mapping.
 
-### Phase B (3-5 ngày) - UI + RBAC
-- Tích hợp trang approver với danh sách host theo phiếu mượn.
-- Nút thao tác nhanh: lock, message, open website.
-- Luật quyền theo role.
-
-### Phase C (3-5 ngày) - Scale + reliability
+Chưa có / hướng mở rộng:
 - Cache framebuffer ngắn hạn.
 - Queue cho lệnh hàng loạt.
 - Dashboard sức khỏe host (`online/offline`, latency, error rate).
+- Liên kết tự động host theo lịch mượn/phòng đang sử dụng.
 
 ## 13) Tiêu chí hoàn thành
 - Approver điều khiển được đúng máy theo phiếu mượn.

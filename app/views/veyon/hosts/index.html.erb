@@ -3,9 +3,12 @@
 <div class="mb-6 rounded-3xl border border-slate-200/70 bg-gradient-to-r from-[#124170] to-[#3f7baa] p-6 text-white shell-card">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-3xl font-extrabold">Điều khiển phòng máy</h1>
-    <% if can_manage_system? %>
-      <%= link_to "Thêm máy", new_veyon_host_path, class: "rounded-2xl border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20" %>
-    <% end %>
+    <div class="flex gap-2">
+      <%= link_to "Điều khiển theo phòng", rooms_veyon_hosts_path, class: "rounded-2xl border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20" %>
+      <% if can_manage_system? %>
+        <%= link_to "Thêm máy", new_veyon_host_path, class: "rounded-2xl border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20" %>
+      <% end %>
+    </div>
   </div>
 </div>
 
@@ -32,7 +35,7 @@
   <table class="min-w-full divide-y divide-slate-200 text-sm">
     <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
       <tr>
-        <th class="px-4 py-3">Host</th>
+        <th class="px-4 py-3">Máy điều khiển</th>
         <th class="px-4 py-3">Đối tượng</th>
         <th class="px-4 py-3">Trạng thái</th>
         <th class="px-4 py-3">Hoạt động gần nhất</th>
@@ -44,7 +47,7 @@
         <tr>
           <td class="px-4 py-3">
             <div class="font-semibold text-slate-900"><%= host.host %></div>
-            <div class="text-xs text-slate-500">Veyon Service port <%= host.service_port %></div>
+            <div class="text-xs text-slate-500">Cổng dịch vụ Veyon <%= host.service_port %></div>
           </td>
           <td class="px-4 py-3">
             <div class="font-semibold text-slate-900"><%= host.asset.name %></div>
@@ -52,7 +55,7 @@
           </td>
           <td class="px-4 py-3">
             <%= status_badge(host.enabled? ? "Kích hoạt" : "Đã tắt", host.enabled? ? "emerald" : "gray") %>
-            <span class="ml-2"><%= status_badge(host.health_state == "online" ? "Online" : "Offline", host.health_state == "online" ? "sky" : "red") %></span>
+            <span class="ml-2"><%= status_badge(host.health_state == "online" ? "Trực tuyến" : "Ngoại tuyến", host.health_state == "online" ? "sky" : "red") %></span>
           </td>
           <td class="px-4 py-3 text-slate-600"><%= vn_datetime(host.last_seen_at) %></td>
           <td class="px-4 py-3">
@@ -69,7 +72,7 @@
 
       <% if @veyon_hosts.empty? %>
         <tr>
-          <td colspan="5" class="px-4 py-12 text-center text-slate-500">Chưa có host Veyon nào.</td>
+          <td colspan="5" class="px-4 py-12 text-center text-slate-500">Chưa có máy Veyon nào.</td>
         </tr>
       <% end %>
     </tbody>

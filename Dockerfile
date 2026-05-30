@@ -26,9 +26,9 @@ RUN bundle _${BUNDLER_VERSION}_ config set path "${BUNDLE_PATH}" && \
     bundle _${BUNDLER_VERSION}_ install --jobs ${BUNDLE_JOBS} --retry ${BUNDLE_RETRY}
 
 COPY . .
-RUN sed -i 's/\r$//' bin/docker-entrypoint bin/rails && \
+RUN sed -i 's/\r$//' bin/docker-entrypoint bin/rails docker/mysql/init/*.sh scripts/*.sh && \
     cp bin/docker-entrypoint /usr/local/bin/qlpm-docker-entrypoint && \
-    chmod +x /usr/local/bin/qlpm-docker-entrypoint bin/rails
+    chmod +x /usr/local/bin/qlpm-docker-entrypoint bin/rails docker/mysql/init/*.sh scripts/*.sh
 
 EXPOSE 3000
 

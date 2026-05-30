@@ -33,7 +33,7 @@ class BorrowLifecycleServiceTest < ActiveSupport::TestCase
       borrow_source: "manual_request",
       borrower_type: "teacher",
       borrower_name: "Teacher",
-      starts_at: 1.hour.from_now,
+      starts_at: 1.hour.ago,
       ends_at: 2.hours.from_now,
       workflow_state: "pending"
     )
@@ -44,6 +44,23 @@ class BorrowLifecycleServiceTest < ActiveSupport::TestCase
     assert_not_nil borrow.approved_at
     assert_equal @admin, borrow.approved_by
     assert_equal "borrowed", @asset.reload.status
+  end
+
+  test "future approved borrow does not occupy asset before start time" do
+    borrow = Borrow.create!(
+      asset: @asset,
+      borrow_source: "manual_request",
+      borrower_type: "teacher",
+      borrower_name: "Teacher",
+      starts_at: 1.day.from_now,
+      ends_at: 1.day.from_now + 1.hour,
+      workflow_state: "approved"
+    )
+
+    BorrowLifecycleService.sync_asset_status!(@asset)
+
+    assert_equal "scheduled", borrow.status
+    assert_equal "active", @asset.reload.status
   end
 
   test "mark returned resets asset state" do
@@ -64,6 +81,45 @@ class BorrowLifecycleServiceTest < ActiveSupport::TestCase
     assert_equal "returned", borrow.reload.workflow_state
     assert_not_nil borrow.returned_at
     assert_equal "active", @asset.reload.status
+  end
+
+  test "sync does not reset maintenance asset to active" do
+    @asset.update!(status: "maintenance")
+
+    BorrowLifecycleService.sync_asset_status!(@asset)
+
+    assert_equal "maintenance", @asset.reload.status
+  end
+
+  test "cannot mark pending borrow returned" do
+    borrow = Borrow.create!(
+      asset: @asset,
+      borrow_source: "manual_request",
+      borrower_type: "teacher",
+      borrower_name: "Teacher",
+      starts_at: 1.hour.from_now,
+      ends_at: 2.hours.from_now,
+      workflow_state: "pending"
+    )
+
+    assert_raises(ArgumentError) { BorrowLifecycleService.mark_returned!(borrow) }
+    assert_nil borrow.reload.returned_at
+  end
+
+  test "inactive assets cannot be borrowed" do
+    @asset.update!(status: "inactive")
+    borrow = Borrow.new(
+      asset: @asset,
+      borrow_source: "manual_request",
+      borrower_type: "teacher",
+      borrower_name: "Teacher",
+      starts_at: 1.hour.from_now,
+      ends_at: 2.hours.from_now,
+      workflow_state: "pending"
+    )
+
+    assert_not borrow.valid?
+    assert_includes borrow.errors[:asset_id], "không sẵn sàng để mượn"
   end
 
   test "apply defaults for non-admin makes pending manual request" do

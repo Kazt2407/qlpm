@@ -14,6 +14,63 @@ module Veyon
       @assets_for_filter = Asset.order(:code)
     end
 
+    def rooms
+      @rooms = Room.includes(assets: :veyon_host).order(:name)
+      @selected_room = params[:room_id].present? ? Room.find_by(id: params[:room_id]) : @rooms.first
+      @allowed_features = allowed_features_for(current_user)
+      @veyon_hosts = if @selected_room
+        VeyonHost.enabled.includes(asset: :room).where(assets: { room_id: @selected_room.id }).references(:asset).order(:host)
+      else
+        VeyonHost.none
+      end
+    end
+
+    def execute_room_feature
+      room = Room.find(params[:room_id])
+      feature_key = params[:feature_key].to_s
+
+      unless allowed_features_for(current_user).include?(feature_key)
+        redirect_to rooms_veyon_hosts_path(room_id: room.id), alert: "Bạn không có quyền dùng thao tác này."
+        return
+      end
+
+      active, arguments, payload_error = build_feature_payload(feature_key)
+      if payload_error.present?
+        redirect_to rooms_veyon_hosts_path(room_id: room.id), alert: payload_error
+        return
+      end
+
+      hosts = VeyonHost.enabled.includes(:asset).where(assets: { room_id: room.id }).references(:asset)
+      success_count = 0
+      failure_count = 0
+
+      hosts.each do |host|
+        response = gateway_client.execute_feature(
+          host: host.target_endpoint,
+          feature_key: feature_key,
+          active: active,
+          arguments: arguments
+        )
+        action = create_action_log_for(host, feature_key, active, arguments)
+
+        if response.success?
+          success_count += 1
+          action.update!(status: "success", response_payload_json: response.body.is_a?(Hash) ? response.body : {})
+          host.update_column(:last_seen_at, Time.current)
+        else
+          failure_count += 1
+          action.update!(
+            status: "failed",
+            response_payload_json: response.body.is_a?(Hash) ? response.body : {},
+            error_code: response.error_code,
+            error_message: response.error_message
+          )
+        end
+      end
+
+      redirect_to rooms_veyon_hosts_path(room_id: room.id), notice: "Đã gửi lệnh cho #{success_count} máy, lỗi #{failure_count} máy."
+    end
+
     def show
       @recent_actions = @veyon_host.veyon_actions.includes(:user, :borrow).recent.limit(20)
       @allowed_features = allowed_features_for(current_user)
@@ -64,7 +121,7 @@ module Veyon
         @veyon_host.update(last_seen_at: Time.current)
         redirect_to veyon_host_path(@veyon_host), notice: "Đã cập nhật trạng thái kết nối."
       else
-        redirect_to veyon_host_path(@veyon_host), alert: "Không thể kết nối gateway: #{response.error_message}"
+        redirect_to veyon_host_path(@veyon_host), alert: "Không thể kết nối cổng trung gian Veyon: #{response.error_message}"
       end
     end
 
@@ -81,7 +138,7 @@ module Veyon
         @veyon_host.update_column(:last_seen_at, Time.current)
         send_data response.raw_body, type: response.content_type.presence || "image/jpeg", disposition: "inline"
       else
-        render plain: "Framebuffer không khả dụng: #{response.error_message}", status: :service_unavailable
+        render plain: "Ảnh màn hình không khả dụng: #{response.error_message}", status: :service_unavailable
       end
     end
 
@@ -93,8 +150,13 @@ module Veyon
         return
       end
 
-      active, arguments = build_feature_payload(feature_key)
-      action = create_action_log(feature_key, active, arguments)
+      active, arguments, payload_error = build_feature_payload(feature_key)
+      if payload_error.present?
+        redirect_to veyon_host_path(@veyon_host), alert: payload_error
+        return
+      end
+
+      action = create_action_log_for(@veyon_host, feature_key, active, arguments)
 
       response = gateway_client.execute_feature(
         host: @veyon_host.target_endpoint,
@@ -171,17 +233,24 @@ module Veyon
     def build_feature_payload(feature_key)
       case feature_key
       when "screen_lock", "input_devices_lock"
-        [active_feature_state, nil]
+        [active_feature_state, nil, nil]
       when "text_message"
-        [true, { text: params[:text].to_s.strip }]
+        text = params[:text].to_s.strip
+        return [true, nil, "Nội dung tin nhắn không được để trống."] if text.blank?
+
+        [true, { text: text }, nil]
       when "open_website"
         urls = params[:website_urls].to_s.split(/[,\n]/).map(&:strip).reject(&:blank?)
-        [true, { websiteUrls: urls }]
+        return [true, nil, "Danh sách trang web không được để trống."] if urls.blank?
+
+        [true, { websiteUrls: urls }, nil]
       when "start_app"
         applications = params[:applications].to_s.split(/[,\n]/).map(&:strip).reject(&:blank?)
-        [true, { applications: applications }]
+        return [true, nil, "Danh sách ứng dụng không được để trống."] if applications.blank?
+
+        [true, { applications: applications }, nil]
       else
-        [true, nil]
+        [true, nil, nil]
       end
     end
 
@@ -189,13 +258,13 @@ module Veyon
       ActiveModel::Type::Boolean.new.cast(params[:active])
     end
 
-    def create_action_log(feature_key, active, arguments)
+    def create_action_log_for(veyon_host, feature_key, active, arguments)
       VeyonAction.create!(
         user: current_user,
-        borrow_id: params[:borrow_id].presence,
-        asset: @veyon_host.asset,
-        veyon_host: @veyon_host,
-        host: @veyon_host.target_endpoint,
+        borrow: matching_borrow_for_audit(veyon_host),
+        asset: veyon_host.asset,
+        veyon_host: veyon_host,
+        host: veyon_host.target_endpoint,
         feature_key: feature_key,
         status: "sent",
         request_payload_json: {
@@ -203,6 +272,12 @@ module Veyon
           arguments: arguments
         }
       )
+    end
+
+    def matching_borrow_for_audit(veyon_host)
+      return nil if params[:borrow_id].blank?
+
+      Borrow.where(id: params[:borrow_id], asset_id: veyon_host.asset_id).first
     end
 
     def active_model_boolean(value)
@@ -215,7 +290,7 @@ module Veyon
 
       [JSON.parse(raw_value), nil]
     rescue JSON::ParserError
-      [nil, "Metadata JSON không đúng định dạng."]
+      [nil, "Dữ liệu JSON bổ sung không đúng định dạng."]
     end
 
     def apply_metadata_parse_error(record)

@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "fileutils"
+
+APP_ROOT = File.expand_path("..", __dir__)
+
+def system!(*args)
+  system(*args, exception: true)
+end
+
+FileUtils.chdir(APP_ROOT) do
+  puts "==> Building and starting the complete QLPM demo stack"
+  system!("docker", "compose", "up", "-d", "--build")
+
+  puts "\n==> Demo is running"
+  puts "Rails app:       http://localhost:3000"
+  puts "Veyon gateway:   http://localhost:8088/v1/health"
+  puts "Adminer:         http://localhost:8080"
+  puts "phpMyAdmin:      http://localhost:8081"
+  puts "\nSeed login: admin@school.edu.vn / password123"
+end

@@ -132,6 +132,8 @@ class BorrowsController < ApplicationController
   def send_reminder
     BorrowLifecycleService.remind!(@borrow, channel: "email")
     redirect_to borrows_path, notice: "Đã gửi nhắc nhở qua thư điện tử đến #{@borrow.borrower_name}."
+  rescue StandardError => e
+    redirect_to borrows_path, alert: "Không thể gửi nhắc nhở: #{e.message}"
   end
 
   private

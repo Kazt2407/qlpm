@@ -36,6 +36,19 @@ Rails.application.configure do
 
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = false
+  config.action_mailer.delivery_method = ENV.fetch("MAIL_DELIVERY_METHOD", "file").to_sym
+  config.action_mailer.file_settings = { location: Rails.root.join("tmp/mails") }
+  if config.action_mailer.delivery_method == :smtp
+    config.action_mailer.smtp_settings = {
+      address: ENV.fetch("SMTP_ADDRESS", "localhost"),
+      port: ENV.fetch("SMTP_PORT", 25).to_i,
+      domain: ENV.fetch("SMTP_DOMAIN", ENV.fetch("APP_HOST", "localhost")),
+      user_name: ENV["SMTP_USERNAME"].presence,
+      password: ENV["SMTP_PASSWORD"].presence,
+      authentication: ENV["SMTP_AUTHENTICATION"].presence,
+      enable_starttls_auto: ActiveModel::Type::Boolean.new.cast(ENV.fetch("SMTP_ENABLE_STARTTLS_AUTO", "false"))
+    }.compact
+  end
 
   # Disable caching for Action Mailer templates even if Action Controller
   # caching is enabled.

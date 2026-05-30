@@ -1,0 +1,65 @@
+<% content_for :title, "Nhập lịch CSV" %>
+
+<div class="mb-6 rounded-3xl border border-slate-200/70 bg-gradient-to-r from-[#124170] to-[#3f7baa] p-6 text-white shell-card">
+  <h1 class="text-3xl font-extrabold">Nhập lịch mượn từ CSV</h1>
+  <p class="mt-2 text-sm text-white/85">Các cột bắt buộc: asset_code, borrower_name, starts_at, ends_at.</p>
+</div>
+
+<div class="shell-card rounded-3xl border border-slate-200/70 p-5">
+  <%= form_with url: borrow_import_path, method: :post, multipart: true, class: "flex flex-wrap items-center gap-3" do |f| %>
+    <%= file_field_tag :file, accept: ".csv,text/csv", class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.submit "Xem trước CSV", class: "rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" %>
+  <% end %>
+  <p class="mt-3 text-xs text-slate-500">Ví dụ thời gian: 2026-06-01 07:00. Các cột tùy chọn: borrower_type, borrower_identifier, borrower_group, purpose, notes.</p>
+</div>
+
+<% if @preview %>
+  <div class="mt-6 grid gap-4 md:grid-cols-3">
+    <div class="shell-card rounded-3xl border border-slate-200/70 p-5">
+      <p class="text-sm text-slate-500">Hợp lệ</p>
+      <p class="mt-2 text-3xl font-extrabold text-emerald-700"><%= @preview.valid_rows.count %></p>
+    </div>
+    <div class="shell-card rounded-3xl border border-slate-200/70 p-5">
+      <p class="text-sm text-slate-500">Lỗi</p>
+      <p class="mt-2 text-3xl font-extrabold text-red-700"><%= @preview.invalid_rows.count %></p>
+    </div>
+    <div class="shell-card rounded-3xl border border-slate-200/70 p-5">
+      <% if @preview.valid_rows.any? %>
+        <%= button_to "Xác nhận nhập lịch", commit_borrow_import_path, method: :post, class: "w-full rounded-2xl bg-[#124170] px-4 py-3 text-sm font-semibold text-white" %>
+      <% else %>
+        <button class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-400" disabled>Không có dòng hợp lệ</button>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="shell-card mt-6 overflow-hidden rounded-3xl border border-slate-200/70">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
+        <tr>
+          <th class="px-4 py-3">Dòng</th>
+          <th class="px-4 py-3">Đối tượng</th>
+          <th class="px-4 py-3">Người mượn</th>
+          <th class="px-4 py-3">Thời gian</th>
+          <th class="px-4 py-3">Kết quả</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 bg-white">
+        <% @preview.rows.each do |row| %>
+          <tr>
+            <td class="px-4 py-3 font-semibold text-slate-700"><%= row.row_number %></td>
+            <td class="px-4 py-3"><%= Asset.find_by(id: row.attributes[:asset_id] || row.attributes["asset_id"])&.code || "–" %></td>
+            <td class="px-4 py-3"><%= row.attributes[:borrower_name] || row.attributes["borrower_name"] %></td>
+            <td class="px-4 py-3 text-slate-600"><%= row.attributes[:starts_at] || row.attributes["starts_at"] %> - <%= row.attributes[:ends_at] || row.attributes["ends_at"] %></td>
+            <td class="px-4 py-3">
+              <% if row.valid? %>
+                <%= status_badge("Hợp lệ", "emerald") %>
+              <% else %>
+                <div class="text-xs text-red-700"><%= row.errors.join("; ") %></div>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

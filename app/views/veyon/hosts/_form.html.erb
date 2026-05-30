@@ -20,12 +20,12 @@
     </div>
 
     <div>
-      <%= f.label :host, "Host/IP", class: "mb-1 block text-sm font-medium text-slate-700" %>
+      <%= f.label :host, "Máy/IP", class: "mb-1 block text-sm font-medium text-slate-700" %>
       <%= f.text_field :host, placeholder: "pc-lab-a-01.school.local", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
     </div>
 
     <div>
-      <%= f.label :service_port, "Cổng Veyon Service", class: "mb-1 block text-sm font-medium text-slate-700" %>
+      <%= f.label :service_port, "Cổng dịch vụ Veyon", class: "mb-1 block text-sm font-medium text-slate-700" %>
       <%= f.number_field :service_port, min: 1, max: 65_535, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
       <p class="mt-1 text-xs text-slate-500">Mặc định 11100 trên máy Windows client. Không phải cổng WebAPI Proxy 11080.</p>
     </div>

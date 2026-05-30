@@ -53,6 +53,8 @@ class UsersController < ApplicationController
 
     @user.destroy
     redirect_to users_path, notice: "Đã xóa người dùng."
+  rescue ActiveRecord::DeleteRestrictionError
+    redirect_to users_path, alert: "Không thể xóa người dùng vì vẫn còn dữ liệu liên kết."
   end
 
   def toggle_active

@@ -6,9 +6,11 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_ROOT_HOST: "%"
       MYSQL_DATABASE: ${DB_NAME:-qlpm}
       DB_USERNAME: ${DB_USERNAME:-qlpm}
       DB_PASSWORD: ${DB_PASSWORD:-qlpm}
+      DB_TEST_NAME: ${DB_TEST_NAME:-qlpm_test}
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -48,6 +50,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-qlpm}
       DB_TIMEOUT: ${DB_TIMEOUT:-5000}
       DB_NAME: ${DB_NAME:-qlpm}
+      DB_TEST_NAME: ${DB_TEST_NAME:-qlpm_test}
       APP_PAGINATION_DEFAULT_PER_PAGE: ${APP_PAGINATION_DEFAULT_PER_PAGE:-15}
       APP_PAGINATION_MAX_PER_PAGE: ${APP_PAGINATION_MAX_PER_PAGE:-100}
       APP_PAGINATION_OPTIONS: ${APP_PAGINATION_OPTIONS:-15,30,50}
@@ -55,6 +58,15 @@ services:
       APP_REPORT_TOP_BORROWERS_LIMIT: ${APP_REPORT_TOP_BORROWERS_LIMIT:-5}
       APP_REPORT_ATTENTION_ASSETS_LIMIT: ${APP_REPORT_ATTENTION_ASSETS_LIMIT:-5}
       APP_REPORT_MONTHS_LOOKBACK: ${APP_REPORT_MONTHS_LOOKBACK:-12}
+      MAIL_FROM: ${MAIL_FROM:-qlpm@example.local}
+      MAIL_DELIVERY_METHOD: ${MAIL_DELIVERY_METHOD:-file}
+      SMTP_ADDRESS: ${SMTP_ADDRESS:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_DOMAIN: ${SMTP_DOMAIN:-localhost}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_AUTHENTICATION: ${SMTP_AUTHENTICATION:-}
+      SMTP_ENABLE_STARTTLS_AUTO: ${SMTP_ENABLE_STARTTLS_AUTO:-false}
       VEYON_ENABLED: ${VEYON_ENABLED:-false}
       VEYON_GATEWAY_BASE_URL: ${VEYON_GATEWAY_BASE_URL:-http://veyon-gateway:8088}
       VEYON_GATEWAY_API_KEY: ${VEYON_GATEWAY_API_KEY:-change-me}
@@ -73,6 +85,38 @@ services:
       - app_tmp:/app/tmp
       - app_log:/app/log
     command: ["ruby", "./bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: qlpm-app:dev
+    profiles: ["test"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    working_dir: /app
+    environment:
+      RAILS_ENV: test
+      RAILS_MAX_THREADS: ${RAILS_MAX_THREADS:-5}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: ${DB_USERNAME:-qlpm}
+      DB_PASSWORD: ${DB_PASSWORD:-qlpm}
+      DB_TIMEOUT: ${DB_TIMEOUT:-5000}
+      DB_NAME: ${DB_NAME:-qlpm}
+      DB_TEST_NAME: ${DB_TEST_NAME:-qlpm_test}
+      VEYON_ENABLED: "false"
+      VEYON_GATEWAY_BASE_URL: ${VEYON_GATEWAY_BASE_URL:-http://veyon-gateway:8088}
+      VEYON_GATEWAY_API_KEY: ${VEYON_GATEWAY_API_KEY:-change-me}
+      BUNDLE_PATH: /usr/local/bundle
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+      - app_storage:/app/storage
+      - app_tmp:/app/tmp
+      - app_log:/app/log
+    command: ["bash", "-lc", "ruby ./bin/rails db:prepare && ruby ./bin/rails test"]
 
   adminer:
     image: adminer:4

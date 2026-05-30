@@ -107,6 +107,86 @@ class VeyonHostsAccessTest < ActionDispatch::IntegrationTest
     assert_equal "success", action.status
   end
 
+  test "veyon action only links matching borrow for audited asset" do
+    other_asset = Asset.create!(
+      code: "AS-VY-OTHER",
+      name: "Other Asset Veyon",
+      asset_type: "computer",
+      category: "computer",
+      room: @asset.room,
+      status: "active"
+    )
+    other_borrow = Borrow.create!(
+      asset: other_asset,
+      created_by: @teacher,
+      borrow_source: "manual_request",
+      borrower_type: "teacher",
+      borrower_name: @teacher.full_name,
+      starts_at: 1.hour.from_now,
+      ends_at: 2.hours.from_now,
+      workflow_state: "pending"
+    )
+    login_as(@approver)
+
+    response = Veyon::GatewayClient::Response.new(
+      success: true,
+      status: 200,
+      body: { "success" => true },
+      raw_body: "{\"success\":true}",
+      content_type: "application/json"
+    )
+
+    fake_client = Object.new
+    fake_client.define_singleton_method(:execute_feature) { |**_kwargs| response }
+
+    Veyon::GatewayClient.stub :new, fake_client do
+      post execute_feature_veyon_host_path(@host), params: {
+        feature_key: "screen_lock",
+        active: true,
+        borrow_id: other_borrow.id
+      }
+    end
+
+    assert_nil VeyonAction.order(:id).last.borrow_id
+  end
+
+  test "veyon command with missing text payload is rejected before gateway call" do
+    login_as(@admin)
+
+    assert_no_difference("VeyonAction.count") do
+      post execute_feature_veyon_host_path(@host), params: { feature_key: "text_message", text: " " }
+    end
+
+    assert_redirected_to veyon_host_path(@host)
+  end
+
+  test "admin can send room command to enabled hosts" do
+    login_as(@admin)
+
+    response = Veyon::GatewayClient::Response.new(
+      success: true,
+      status: 200,
+      body: { "success" => true },
+      raw_body: "{\"success\":true}",
+      content_type: "application/json"
+    )
+    fake_client = Object.new
+    fake_client.define_singleton_method(:execute_feature) { |**_kwargs| response }
+
+    Veyon::GatewayClient.stub :new, fake_client do
+      assert_difference("VeyonAction.count", 1) do
+        post execute_room_feature_veyon_hosts_path, params: {
+          room_id: @asset.room_id,
+          feature_key: "screen_lock",
+          active: true
+        }
+      end
+    end
+
+    assert_redirected_to rooms_veyon_hosts_path(room_id: @asset.room_id)
+    assert_equal "success", VeyonAction.order(:id).last.status
+  end
+
   test "approver cannot run disallowed reboot feature" do
     login_as(@approver)
 

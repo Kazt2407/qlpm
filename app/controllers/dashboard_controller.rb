@@ -7,6 +7,7 @@ class DashboardController < ApplicationController
     @active_assets = Asset.where(status: "active").count
     @borrowed_assets = Asset.where(status: %w[borrowed in_use]).count
     @maintenance_assets = Asset.where(status: %w[broken maintenance]).count
+    @open_work_orders = WorkOrder.open.count if defined?(WorkOrder)
     @active_pct = @total_assets.positive? ? (@active_assets.to_f / @total_assets * 100).round(1) : 0
 
     @assets_by_room = Room.includes(:assets).order(:name).map do |room|
@@ -25,5 +26,6 @@ class DashboardController < ApplicationController
 
     scope = Borrow.includes(:asset).recent
     @recent_borrows = scope.limit(8)
+    @recent_work_orders = WorkOrder.includes(:asset).recent.limit(5) if defined?(WorkOrder)
   end
 end

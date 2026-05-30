@@ -61,6 +61,8 @@ class AssetsController < ApplicationController
   def destroy
     @asset.destroy
     redirect_to assets_path, notice: "Đã xóa đối tượng."
+  rescue ActiveRecord::DeleteRestrictionError
+    redirect_to assets_path, alert: "Không thể xóa đối tượng vì vẫn còn dữ liệu liên kết."
   end
 
   private

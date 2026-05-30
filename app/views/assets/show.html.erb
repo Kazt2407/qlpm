@@ -6,10 +6,11 @@
     <h1 class="mt-3 text-3xl font-extrabold text-slate-900"><%= @asset.name %></h1>
   </div>
   <div class="flex gap-3">
-    <%= status_badge(@asset.status_label, @asset.status_color) %>
-    <% if current_user.admin? %>
-      <%= link_to "Chỉnh sửa", edit_asset_path(@asset), class: "rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50" %>
-    <% end %>
+      <%= status_badge(@asset.status_label, @asset.status_color) %>
+      <%= link_to "Báo lỗi", new_work_order_path(asset_id: @asset.id), class: "rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 hover:bg-amber-100" %>
+      <% if current_user.admin? %>
+        <%= link_to "Chỉnh sửa", edit_asset_path(@asset), class: "rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50" %>
+      <% end %>
   </div>
 </div>
 
@@ -24,6 +25,7 @@
       <div class="flex justify-between"><span class="text-slate-500">Mẫu mã</span><span class="font-medium text-slate-800"><%= @asset.model_code.presence || "–" %></span></div>
       <div class="flex justify-between"><span class="text-slate-500">Số sê-ri</span><span class="font-medium text-slate-800"><%= @asset.serial_number.presence || "–" %></span></div>
       <div class="flex justify-between"><span class="text-slate-500">Địa chỉ IP</span><span class="font-medium text-slate-800"><%= @asset.ip_address.presence || "–" %></span></div>
+      <div class="flex justify-between gap-4"><span class="text-slate-500">Liên kết tra cứu</span><span class="truncate text-right font-medium text-[#124170]"><%= asset_url(@asset) %></span></div>
     </div>
 
     <% if @asset.notes.present? %>

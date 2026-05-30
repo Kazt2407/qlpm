@@ -14,7 +14,7 @@ class SessionsController < ApplicationController
       flash.now[:alert] = "Tài khoản đã bị vô hiệu hóa."
       render :new, status: :unprocessable_entity
     else
-      flash.now[:alert] = "Email hoặc mật khẩu không đúng."
+      flash.now[:alert] = "Thư điện tử hoặc mật khẩu không đúng."
       render :new, status: :unprocessable_entity
     end
   end

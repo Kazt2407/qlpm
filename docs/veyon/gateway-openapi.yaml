@@ -30,22 +30,26 @@ components:
           additionalProperties: true
     OpenConnectionResponse:
       type: object
-      required: [connection_uid, valid_until]
+      required: [connection_uid, valid_until, reused]
       properties:
         connection_uid:
           type: string
         valid_until:
           type: string
           format: date-time
+        reused:
+          type: boolean
+          description: True when the gateway reused an existing valid connection for the same host/auth tuple.
     FeatureRequest:
       type: object
-      required: [active]
       properties:
         active:
           type: boolean
+          default: true
         arguments:
           type: object
           additionalProperties: true
+          description: Feature-specific arguments. Rails validates required values before calling the gateway.
     FeatureResponse:
       type: object
       properties:
@@ -69,9 +73,27 @@ paths:
   /v1/health:
     get:
       summary: Health check
+      security: []
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  time:
+                    type: string
+                    format: date-time
+                  upstream_base_url:
+                    type: string
+                  connections_open:
+                    type: integer
+                  default_auth_method:
+                    type: string
   /v1/connections/open:
     post:
       summary: Open or reuse authenticated connection to host
@@ -106,6 +128,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Upstream authentication/query failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /v1/connections/{connection_uid}:
     delete:
       summary: Close connection
@@ -120,6 +148,10 @@ paths:
           description: Closed
         '404':
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /v1/hosts/{host}/framebuffer:
     get:
       summary: Get host framebuffer image through an authenticated connection
@@ -174,6 +206,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Upstream timeout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /v1/hosts/{host}/features/{feature_key}:
     post:
       summary: Execute Veyon feature on host
@@ -218,7 +256,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
-          description: Authentication failed
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Upstream feature execution failed
           content:
             application/json:
               schema:

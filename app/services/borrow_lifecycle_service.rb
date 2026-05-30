@@ -1,5 +1,6 @@
 class BorrowLifecycleService
   ACTIVE_WORKFLOW_STATES = %w[approved active].freeze
+  SYSTEM_MANAGED_ASSET_STATUSES = %w[active borrowed in_use].freeze
 
   def self.apply_defaults!(borrow, actor)
     new(borrow, actor).apply_defaults!
@@ -10,12 +11,14 @@ class BorrowLifecycleService
 
     active_exists = asset.borrows
       .where(returned_at: nil, workflow_state: ACTIVE_WORKFLOW_STATES)
-      .where("ends_at >= ?", Time.current)
+      .where("starts_at <= ? AND ends_at >= ?", Time.current, Time.current)
       .exists?
 
     target_status = if active_exists
       asset.asset_type == "room" ? "in_use" : "borrowed"
     else
+      return unless asset.status.in?(SYSTEM_MANAGED_ASSET_STATUSES)
+
       "active"
     end
 
@@ -23,6 +26,8 @@ class BorrowLifecycleService
   end
 
   def self.mark_returned!(borrow)
+    raise ArgumentError, "Phiếu không ở trạng thái có thể trả." unless borrow.can_return?
+
     borrow.transaction do
       borrow.update!(returned_at: Time.current, workflow_state: "returned")
       sync_asset_status!(borrow.asset)
@@ -56,6 +61,9 @@ class BorrowLifecycleService
   end
 
   def self.remind!(borrow, channel: "email")
+    raise ArgumentError, "Phiếu mượn không có địa chỉ thư điện tử của người tạo." if channel == "email" && borrow.created_by&.email.blank?
+
+    BorrowMailer.reminder(borrow).deliver_now if channel == "email"
     borrow.update!(reminded_at: Time.current, reminder_channel: channel)
   end
 

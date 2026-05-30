@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_11_000005) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_30_000001) do
   create_table "assets", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "code", null: false
     t.string "name", null: false
@@ -145,6 +145,29 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_11_000005) do
     t.index ["host", "service_port"], name: "index_veyon_hosts_on_host_and_service_port", unique: true
   end
 
+  create_table "work_orders", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "asset_id", null: false
+    t.bigint "reported_by_id"
+    t.bigint "assigned_to_id"
+    t.string "title", null: false
+    t.text "description"
+    t.string "priority", default: "normal", null: false
+    t.string "status", default: "open", null: false
+    t.date "due_on"
+    t.datetime "resolved_at"
+    t.decimal "cost", precision: 12, scale: 2
+    t.text "resolution_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_work_orders_on_asset_id"
+    t.index ["assigned_to_id"], name: "index_work_orders_on_assigned_to_id"
+    t.index ["due_on"], name: "index_work_orders_on_due_on"
+    t.index ["priority"], name: "index_work_orders_on_priority"
+    t.index ["reported_by_id"], name: "index_work_orders_on_reported_by_id"
+    t.index ["resolved_at"], name: "index_work_orders_on_resolved_at"
+    t.index ["status"], name: "index_work_orders_on_status"
+  end
+
   add_foreign_key "assets", "assets", column: "parent_id"
   add_foreign_key "assets", "rooms"
   add_foreign_key "borrows", "assets"
@@ -155,4 +178,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_11_000005) do
   add_foreign_key "veyon_actions", "users"
   add_foreign_key "veyon_actions", "veyon_hosts"
   add_foreign_key "veyon_hosts", "assets"
+  add_foreign_key "work_orders", "assets"
+  add_foreign_key "work_orders", "users", column: "assigned_to_id"
+  add_foreign_key "work_orders", "users", column: "reported_by_id"
 end

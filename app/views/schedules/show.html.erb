@@ -1,0 +1,52 @@
+<% content_for :title, "Lịch sử dụng" %>
+
+<div class="mb-6 rounded-3xl border border-slate-200/70 bg-gradient-to-r from-[#124170] to-[#3f7baa] p-6 text-white shell-card">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-3xl font-extrabold">Lịch sử dụng phòng và thiết bị</h1>
+      <p class="mt-1 text-sm text-white/85">Tuần <%= vn_date(@days.first) %> - <%= vn_date(@days.last) %></p>
+    </div>
+    <div class="flex gap-2">
+      <%= link_to "Tuần trước", schedule_path(date: (@date - 1.week), room_id: @room_id), class: "rounded-2xl border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white" %>
+      <%= link_to "Hôm nay", schedule_path(room_id: @room_id), class: "rounded-2xl border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white" %>
+      <%= link_to "Tuần sau", schedule_path(date: (@date + 1.week), room_id: @room_id), class: "rounded-2xl border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white" %>
+    </div>
+  </div>
+</div>
+
+<div class="shell-card rounded-3xl border border-slate-200/70 p-5">
+  <%= form_with url: schedule_path, method: :get, class: "grid gap-3 md:grid-cols-4" do |f| %>
+    <%= f.date_field :date, value: @date, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.select :room_id, [["Tất cả phòng", ""]] + @rooms.map { |room| [room.name, room.id] }, { selected: @room_id }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.submit "Xem lịch", class: "rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" %>
+  <% end %>
+</div>
+
+<div class="mt-6 grid gap-4 lg:grid-cols-7">
+  <% @days.each do |day| %>
+    <section class="shell-card min-h-80 rounded-3xl border border-slate-200/70 p-4">
+      <div class="mb-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500"><%= vn_weekday(day) %></p>
+        <h2 class="mt-1 text-lg font-bold text-slate-900"><%= vn_date(day) %></h2>
+      </div>
+
+      <div class="space-y-3">
+        <% Array(@borrows_by_day[day]).each do |borrow| %>
+          <%= link_to borrow_path(borrow), class: "block rounded-2xl border border-slate-200 bg-white p-3 hover:bg-slate-50" do %>
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-[#124170]"><%= borrow.starts_at.strftime("%H:%M") %> - <%= borrow.ends_at.strftime("%H:%M") %></span>
+              <%= status_badge(borrow.status_label, borrow.status_color) %>
+            </div>
+            <div class="mt-2 text-sm font-semibold text-slate-900"><%= borrow.asset.code %></div>
+            <div class="text-xs text-slate-500"><%= borrow.asset.room_name || borrow.asset.name %></div>
+            <div class="mt-1 text-xs text-slate-600"><%= borrow.borrower_name %></div>
+          <% end %>
+        <% end %>
+
+        <% if Array(@borrows_by_day[day]).empty? %>
+          <div class="rounded-2xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-500">Trống lịch</div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</div>

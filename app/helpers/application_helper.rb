@@ -13,6 +13,7 @@ module ApplicationHelper
       "red"     => "bg-red-50 text-red-700 ring-1 ring-red-200",
       "gray"    => "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
       "blue"    => "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+      "indigo"  => "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200",
       "sky"     => "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
       "slate"   => "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
     }[color.to_s] || "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
@@ -25,6 +26,7 @@ module ApplicationHelper
       "red"     => "bg-red-500",
       "gray"    => "bg-slate-500",
       "blue"    => "bg-blue-500",
+      "indigo"  => "bg-indigo-500",
       "sky"     => "bg-sky-500",
       "slate"   => "bg-slate-500"
     }[color.to_s] || "bg-slate-500"
@@ -46,6 +48,12 @@ module ApplicationHelper
   def vn_datetime(dt)
     return "–" unless dt
     dt.strftime("%d/%m/%Y %H:%M")
+  end
+
+  def vn_weekday(date)
+    return "–" unless date
+
+    %w[Chủ\ nhật Thứ\ hai Thứ\ ba Thứ\ tư Thứ\ năm Thứ\ sáu Thứ\ bảy][date.wday]
   end
 
   # Percentage bar width clamped 0–100

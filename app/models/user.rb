@@ -19,6 +19,8 @@ class User < ApplicationRecord
   has_many :created_borrows, class_name: "Borrow", foreign_key: :created_by_id, dependent: :nullify
   has_many :approved_borrows, class_name: "Borrow", foreign_key: :approved_by_id, dependent: :nullify
   has_many :veyon_actions, dependent: :restrict_with_exception
+  has_many :reported_work_orders, class_name: "WorkOrder", foreign_key: :reported_by_id, dependent: :nullify
+  has_many :assigned_work_orders, class_name: "WorkOrder", foreign_key: :assigned_to_id, dependent: :nullify
 
   validates :full_name, presence: true
   validates :email, presence: true, uniqueness: true

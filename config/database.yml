@@ -6,8 +6,8 @@ default: &default
   timeout: <%= ENV.fetch("DB_TIMEOUT", 5000) %>
   host: <%= ENV.fetch("DB_HOST", "127.0.0.1") %>
   port: <%= ENV.fetch("DB_PORT", 3306) %>
-  username: <%= ENV.fetch("DB_USERNAME", "root") %>
-  password: <%= ENV.fetch("DB_PASSWORD", "") %>
+  username: <%= ENV.fetch("DB_USERNAME", "qlpm") %>
+  password: <%= ENV.fetch("DB_PASSWORD", "qlpm") %>
 
 development:
   <<: *default
@@ -15,7 +15,7 @@ development:
 
 test:
   <<: *default
-  database: <%= ENV.fetch("DB_NAME", "qlpm") %>
+  database: <%= ENV.fetch("DB_TEST_NAME", "qlpm_test") %>
 
 production:
   <<: *default

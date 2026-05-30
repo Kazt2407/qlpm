@@ -2,6 +2,18 @@
 
 Gateway trung gian giữa Rails app và Veyon WebAPI.
 
+Trong monorepo demo, service này chạy qua Docker Compose từ thư mục gốc:
+
+```bash
+ruby bin/demo
+```
+
+Kiểm tra health:
+
+```bash
+curl http://localhost:8088/v1/health
+```
+
 ## Biến môi trường
 
 - `GATEWAY_PORT` (default: `8088`)
@@ -14,6 +26,7 @@ Gateway trung gian giữa Rails app và Veyon WebAPI.
 - `VEYON_WEBAPI_INSECURE_SKIP_TLS_VERIFY` (`true/false`, default `false`)
 - `GATEWAY_REQUEST_TIMEOUT_MS` (default: `15000`)
 - `GATEWAY_CLEANUP_INTERVAL_MS` (default: `30000`)
+- `GATEWAY_REUSE_SKEW_MS` (default: `5000`)
 
 ## Endpoint
 
@@ -24,6 +37,8 @@ Gateway trung gian giữa Rails app và Veyon WebAPI.
 - `POST /v1/hosts/:host/features/:feature_key`
 - `GET /v1/hosts/:host/user`
 - `GET /v1/hosts/:host/session`
+
+`GET /v1/health` không cần `X-API-Key`; các endpoint còn lại yêu cầu header này.
 
 ## Phân biệt port
 

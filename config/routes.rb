@@ -7,6 +7,11 @@ Rails.application.routes.draw do
 
   resources :assets
   resources :rooms
+  resources :work_orders
+  resource :schedule, only: :show
+  resource :borrow_import, only: %i[new create] do
+    post :commit
+  end
   resources :borrows do
     member do
       patch :confirm_return
@@ -25,6 +30,10 @@ Rails.application.routes.draw do
 
   namespace :veyon do
     resources :hosts do
+      collection do
+        get :rooms
+        post :execute_room_feature
+      end
       member do
         get :framebuffer
         post :execute_feature

@@ -1,0 +1,16 @@
+<h1>Nhắc trả thiết bị</h1>
+
+<p>Xin chào <strong><%= @borrow.borrower_name %></strong>,</p>
+
+<p>Phiếu mượn sau đang cần được xử lý trả thiết bị:</p>
+
+<div class="box">
+  <p><strong>Đối tượng:</strong> <%= @asset.code %> - <%= @asset.name %></p>
+  <p><strong>Thời gian mượn:</strong> <%= @borrow.starts_at.strftime("%d/%m/%Y %H:%M") %> - <%= @borrow.ends_at.strftime("%d/%m/%Y %H:%M") %></p>
+  <p><strong>Trạng thái:</strong> <%= @borrow.status_label %></p>
+  <% if @borrow.purpose.present? %>
+    <p><strong>Mục đích:</strong> <%= @borrow.purpose %></p>
+  <% end %>
+</div>
+
+<p class="muted">Thư này được gửi từ hệ thống QLPM.</p>

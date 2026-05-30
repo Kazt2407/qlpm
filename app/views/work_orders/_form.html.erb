@@ -1,0 +1,54 @@
+<%= form_with model: work_order, class: "shell-card rounded-3xl border border-slate-200/70 p-6" do |f| %>
+  <% if work_order.errors.any? %>
+    <div class="mb-5 rounded-2xl bg-red-50 p-4 text-sm text-red-700">
+      <%= work_order.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <%= f.label :asset_id, "Đối tượng", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.select :asset_id, @assets.map { |a| ["#{a.code} - #{a.name}", a.id] }, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div>
+      <%= f.label :priority, "Mức độ", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.select :priority, WorkOrder.priority_options, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div class="md:col-span-2">
+      <%= f.label :title, "Tiêu đề", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.text_field :title, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+    <div class="md:col-span-2">
+      <%= f.label :description, "Mô tả lỗi", class: "mb-2 block text-sm font-medium text-slate-700" %>
+      <%= f.text_area :description, rows: 5, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    </div>
+
+    <% if can_manage_system? %>
+      <div>
+        <%= f.label :status, "Trạng thái", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.select :status, WorkOrder.status_options, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+      <div>
+        <%= f.label :assigned_to_id, "Người xử lý", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.select :assigned_to_id, [["Chưa phân công", ""]] + @assignees.map { |u| [u.full_name, u.id] }, {}, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+      <div>
+        <%= f.label :due_on, "Hạn xử lý", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.date_field :due_on, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+      <div>
+        <%= f.label :cost, "Chi phí", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.number_field :cost, step: "0.01", class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+      <div class="md:col-span-2">
+        <%= f.label :resolution_notes, "Ghi chú xử lý", class: "mb-2 block text-sm font-medium text-slate-700" %>
+        <%= f.text_area :resolution_notes, rows: 4, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-6 flex justify-end gap-3">
+    <%= link_to "Hủy", work_order.persisted? ? work_order_path(work_order) : assets_path, class: "rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600" %>
+    <%= f.submit "Lưu", class: "rounded-2xl bg-[#124170] px-5 py-2.5 text-sm font-semibold text-white" %>
+  </div>
+<% end %>

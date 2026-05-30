@@ -42,6 +42,7 @@ class Asset < ApplicationRecord
 
   has_many :children, class_name: "Asset", foreign_key: :parent_id, dependent: :nullify
   has_many :borrows, dependent: :restrict_with_exception
+  has_many :work_orders, dependent: :restrict_with_exception
   has_one :veyon_host, dependent: :destroy
   has_many :veyon_actions, dependent: :restrict_with_exception
 

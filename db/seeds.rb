@@ -1,6 +1,10 @@
 puts "Seeding rebuilt database..."
 
+VeyonAction.delete_all if defined?(VeyonAction)
+VeyonHost.delete_all if defined?(VeyonHost)
 Borrow.delete_all
+WorkOrder.delete_all if defined?(WorkOrder)
+Asset.update_all(parent_id: nil)
 Asset.delete_all
 Room.delete_all
 User.delete_all
@@ -267,9 +271,31 @@ Borrow.create!(
 
 puts "  Created #{Borrow.count} borrows"
 
-if defined?(VeyonHost)
-  VeyonHost.delete_all
+if defined?(WorkOrder)
+  WorkOrder.create!(
+    asset: assets[:keyboard_c_08],
+    reported_by: users[:teacher],
+    assigned_to: users[:approver],
+    title: "Bàn phím kẹt phím Enter",
+    description: "Thiết bị được báo kẹt phím sau buổi ôn thi.",
+    priority: "high",
+    status: "in_progress",
+    due_on: 2.days.from_now.to_date
+  )
 
+  WorkOrder.create!(
+    asset: assets[:monitor_a_07],
+    reported_by: users[:student],
+    title: "Màn hình chớp sáng",
+    description: "Màn hình thỉnh thoảng chớp sáng khi mở trình duyệt.",
+    priority: "normal",
+    status: "open"
+  )
+
+  puts "  Created #{WorkOrder.count} work orders"
+end
+
+if defined?(VeyonHost)
   VeyonHost.create!(
     asset: assets[:pc_a_01],
     host: "pc-a-001.school.local",

@@ -32,7 +32,7 @@ class SessionsLoginTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: @teacher.email, password: "wrong-password" }
 
     assert_response :unprocessable_entity
-    assert_match "Email hoặc mật khẩu không đúng.", @response.body
+    assert_match "Thư điện tử hoặc mật khẩu không đúng.", @response.body
   end
 
   test "teacher login redirects to borrow list" do

@@ -4,7 +4,7 @@ class ReportsController < ApplicationController
   before_action :require_admin!
 
   def index
-    @month = params[:month]&.to_date || Date.current.beginning_of_month
+    @month = report_month
     month_range = @month.beginning_of_month..@month.end_of_month
 
     @total_borrows      = Borrow.where(starts_at: month_range).count
@@ -32,6 +32,8 @@ class ReportsController < ApplicationController
       .count
 
     @attention_assets = Asset.where(status: %w[broken maintenance inactive]).order(updated_at: :desc).limit(AppSettings.report_attention_assets_limit)
+    @open_work_orders = WorkOrder.open.count if defined?(WorkOrder)
+    @work_orders_by_status = defined?(WorkOrder) ? WorkOrder.group(:status).count : {}
     @borrow_sources = Borrow.group(:borrow_source).count
     @borrower_mix = Borrow.group(:borrower_type).count
 
@@ -39,15 +41,15 @@ class ReportsController < ApplicationController
   end
 
   def export
-    month = params[:month]&.to_date || Date.current.beginning_of_month
+    month = report_month
     range = month.beginning_of_month..month.end_of_month
     borrows = Borrow.includes(:asset, :created_by, :approved_by).where(starts_at: range).order(:starts_at)
 
     csv = CSV.generate(headers: true) do |out|
       out << [
-        "Borrow ID", "Asset Code", "Asset Name", "Borrower",
-        "Borrower Type", "Source", "Workflow", "Starts At",
-        "Ends At", "Returned At", "Created By", "Approved By"
+        "Mã phiếu", "Mã đối tượng", "Tên đối tượng", "Người mượn",
+        "Nhóm người mượn", "Nguồn", "Trạng thái xử lý", "Bắt đầu",
+        "Kết thúc", "Thời gian trả", "Người tạo", "Người duyệt"
       ]
 
       borrows.each do |borrow|
@@ -74,6 +76,14 @@ class ReportsController < ApplicationController
   end
 
   private
+
+  def report_month
+    return Date.current.beginning_of_month if params[:month].blank?
+
+    Date.parse(params[:month].to_s).beginning_of_month
+  rescue ArgumentError
+    Date.current.beginning_of_month
+  end
 
   def calculate_on_time_pct(range)
     total    = Borrow.returned.where(starts_at: range).count

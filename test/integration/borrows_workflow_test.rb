@@ -42,6 +42,7 @@ class BorrowsWorkflowTest < ActionDispatch::IntegrationTest
       ends_at: 2.hours.from_now,
       workflow_state: "pending"
     )
+    ActionMailer::Base.deliveries.clear
   end
 
   test "approver can approve and reject borrow via endpoints" do
@@ -61,5 +62,23 @@ class BorrowsWorkflowTest < ActionDispatch::IntegrationTest
 
     get users_path
     assert_redirected_to borrows_path
+  end
+
+  test "admin can send borrow reminder through mail" do
+    @borrow.update!(workflow_state: "approved", starts_at: 2.hours.ago, ends_at: 1.hour.ago)
+    login_as(@admin)
+
+    assert_difference("ActionMailer::Base.deliveries.size", 1) do
+      post send_reminder_borrow_path(@borrow)
+    end
+
+    assert_redirected_to borrows_path
+    assert_not_nil @borrow.reload.reminded_at
+    assert_equal "email", @borrow.reminder_channel
+
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal [@teacher.email], mail.to
+    assert_match "Nhắc trả thiết bị #{@asset.code}", mail.subject
+    assert_match @borrow.borrower_name, mail.body.encoded
   end
 end

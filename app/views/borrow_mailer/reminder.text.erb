@@ -1,0 +1,14 @@
+Nhắc trả thiết bị
+
+Xin chào <%= @borrow.borrower_name %>,
+
+Phiếu mượn sau đang cần được xử lý trả thiết bị:
+
+Đối tượng: <%= @asset.code %> - <%= @asset.name %>
+Thời gian mượn: <%= @borrow.starts_at.strftime("%d/%m/%Y %H:%M") %> - <%= @borrow.ends_at.strftime("%d/%m/%Y %H:%M") %>
+Trạng thái: <%= @borrow.status_label %>
+<% if @borrow.purpose.present? %>
+Mục đích: <%= @borrow.purpose %>
+<% end %>
+
+Thư này được gửi từ hệ thống QLPM.

@@ -1,0 +1,61 @@
+<% content_for :title, "Bảo trì" %>
+
+<div class="mb-8 flex items-start justify-between">
+  <div>
+    <h1 class="text-3xl font-extrabold text-slate-900">Bảo trì và xử lý lỗi</h1>
+    <p class="mt-2 text-sm text-slate-500">Theo dõi sự cố, phân công xử lý, chi phí và lịch sử bảo trì.</p>
+  </div>
+  <%= link_to "Tạo yêu cầu", new_work_order_path, class: "rounded-2xl bg-[#124170] px-4 py-2.5 text-sm font-semibold text-white" %>
+</div>
+
+<div class="shell-card rounded-3xl border border-slate-200/70 p-5">
+  <%= form_with url: work_orders_path, method: :get, class: "grid gap-3 md:grid-cols-4" do |f| %>
+    <%= f.select :status, [["Tất cả trạng thái", ""]] + WorkOrder.status_options, { selected: params[:status] }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.select :priority, [["Tất cả mức độ", ""]] + WorkOrder.priority_options, { selected: params[:priority] }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <%= f.select :asset_id, [["Tất cả đối tượng", ""]] + @assets_for_filter.map { |a| ["#{a.code} - #{a.name}", a.id] }, { selected: params[:asset_id] }, class: "rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+    <div class="flex gap-2">
+      <%= f.select :per_page, pagination_per_page_options, { selected: selected_per_page_param }, class: "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" %>
+      <%= f.submit "Lọc", class: "rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" %>
+    </div>
+  <% end %>
+</div>
+
+<div class="shell-card mt-6 overflow-hidden rounded-3xl border border-slate-200/70">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.2em] text-slate-500">
+      <tr>
+        <th class="px-4 py-3">Yêu cầu</th>
+        <th class="px-4 py-3">Đối tượng</th>
+        <th class="px-4 py-3">Mức độ</th>
+        <th class="px-4 py-3">Trạng thái</th>
+        <th class="px-4 py-3">Người xử lý</th>
+        <th class="px-4 py-3">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100 bg-white">
+      <% @work_orders.each do |work_order| %>
+        <tr>
+          <td class="px-4 py-3">
+            <div class="font-semibold text-slate-900"><%= work_order.title %></div>
+            <div class="text-xs text-slate-500">#WO-<%= work_order.id.to_s.rjust(5, "0") %> · <%= vn_datetime(work_order.created_at) %></div>
+          </td>
+          <td class="px-4 py-3"><%= link_to work_order.asset.code, asset_path(work_order.asset), class: "font-semibold text-[#124170]" %></td>
+          <td class="px-4 py-3"><%= status_badge(work_order.priority_label, work_order.priority_color) %></td>
+          <td class="px-4 py-3"><%= status_badge(work_order.status_label, work_order.status_color) %></td>
+          <td class="px-4 py-3 text-slate-600"><%= work_order.assigned_to&.full_name || "–" %></td>
+          <td class="px-4 py-3">
+            <div class="flex gap-2">
+              <%= link_to "Xem", work_order_path(work_order), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600" %>
+              <%= link_to "Sửa", edit_work_order_path(work_order), class: "rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600" %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+      <% if @work_orders.empty? %>
+        <tr><td colspan="6" class="px-4 py-12 text-center text-slate-500">Chưa có yêu cầu bảo trì.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%= render "shared/pagination", page: @page, total_pages: @total_pages, total_count: @total_count %>

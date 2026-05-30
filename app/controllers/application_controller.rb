@@ -53,11 +53,13 @@ class ApplicationController < ActionController::Base
       @sidebar_rooms = Room.count
       @sidebar_active = Asset.where(status: "active").count
       @sidebar_open_borrows = Borrow.active.count
+      @sidebar_open_work_orders = WorkOrder.open.count if defined?(WorkOrder)
     elsif can_review_borrows?
       @sidebar_assets = "–"
       @sidebar_rooms = "–"
       @sidebar_active = Borrow.where(workflow_state: "pending").count
       @sidebar_open_borrows = Borrow.active.count
+      @sidebar_open_work_orders = WorkOrder.open.count if defined?(WorkOrder)
     else
       my_scope = Borrow.where(created_by: current_user)
       @sidebar_assets = my_scope.count

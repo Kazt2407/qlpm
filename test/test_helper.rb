@@ -1,10 +1,11 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require "minitest/mock"
 
 module ActiveSupport
   class TestCase
-    # Keep tests single-process for SQLite stability in local dev.
+    # Minitest setup is intentionally lightweight; database isolation is handled by Rails.
   end
 end
 
