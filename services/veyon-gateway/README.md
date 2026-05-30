@@ -22,11 +22,29 @@ curl http://localhost:8088/v1/health
 - `VEYON_DEFAULT_AUTH_METHOD` (default: `auth_logon`)
 - `VEYON_AUTH_USERNAME`, `VEYON_AUTH_PASSWORD` (cho `auth_logon`/`auth_ldap`)
 - `VEYON_AUTH_SIMPLE_PASSWORD` (cho `auth_simple`)
-- `VEYON_AUTH_KEYNAME`, `VEYON_AUTH_KEYDATA` (cho `auth_keys`)
+- `VEYON_AUTH_KEYNAME`, `VEYON_AUTH_KEYDATA` hoặc `VEYON_AUTH_KEYDATA_FILE` (cho `auth_keys`)
 - `VEYON_WEBAPI_INSECURE_SKIP_TLS_VERIFY` (`true/false`, default `false`)
 - `GATEWAY_REQUEST_TIMEOUT_MS` (default: `15000`)
 - `GATEWAY_CLEANUP_INTERVAL_MS` (default: `30000`)
 - `GATEWAY_REUSE_SKEW_MS` (default: `5000`)
+
+### `auth_keys` báº±ng file
+
+Äáº·t file key á»Ÿ host, mount vÃ o container dÆ°á»›i dáº¡ng read-only, sau Ä‘Ã³ trá» `VEYON_AUTH_KEYDATA_FILE` tá»›i Ä‘Æ°á»ng dáº«n bÃªn trong container:
+
+```yaml
+veyon-gateway:
+  volumes:
+    - ./secrets/veyon-auth-key.pem:/run/secrets/veyon-auth-key.pem:ro
+```
+
+```env
+VEYON_DEFAULT_AUTH_METHOD=auth_keys
+VEYON_AUTH_KEYNAME=your-key-name
+VEYON_AUTH_KEYDATA_FILE=/run/secrets/veyon-auth-key.pem
+```
+
+Náº¿u khÃ´ng dÃ¹ng file, cÃ³ thá»ƒ Ä‘áº·t ná»™i dung key trá»±c tiáº¿p trong `VEYON_AUTH_KEYDATA`.
 
 ## Endpoint
 

@@ -20,3 +20,7 @@
 .env
 .env.*
 !.env.example
+
+# Local secrets mounted into containers
+/secrets/*
+!/secrets/.keep

@@ -311,3 +311,4 @@ Lưu ý cấu hình bắt buộc:
 - Nếu WebAPI Proxy chạy trên Docker host, mặc định `host.docker.internal:11080` đã được map qua `extra_hosts`
 - Host trong màn hình Veyon của QLPM phải trỏ tới máy Windows client và `service_port` thường là `11100`
 - Với `auth_logon` hoặc `auth_ldap`: cần `VEYON_AUTH_USERNAME` + `VEYON_AUTH_PASSWORD`
+- Với `auth_keys`: cần `VEYON_AUTH_KEYNAME` và `VEYON_AUTH_KEYDATA` hoặc `VEYON_AUTH_KEYDATA_FILE`

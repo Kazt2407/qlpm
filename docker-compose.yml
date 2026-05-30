@@ -155,6 +155,7 @@ services:
       VEYON_AUTH_SIMPLE_PASSWORD: ${VEYON_AUTH_SIMPLE_PASSWORD:-}
       VEYON_AUTH_KEYNAME: ${VEYON_AUTH_KEYNAME:-}
       VEYON_AUTH_KEYDATA: ${VEYON_AUTH_KEYDATA:-}
+      VEYON_AUTH_KEYDATA_FILE: ${VEYON_AUTH_KEYDATA_FILE:-}
       VEYON_WEBAPI_INSECURE_SKIP_TLS_VERIFY: ${VEYON_WEBAPI_INSECURE_SKIP_TLS_VERIFY:-false}
       GATEWAY_REQUEST_TIMEOUT_MS: ${GATEWAY_REQUEST_TIMEOUT_MS:-15000}
       GATEWAY_CLEANUP_INTERVAL_MS: ${GATEWAY_CLEANUP_INTERVAL_MS:-30000}
@@ -162,6 +163,10 @@ services:
       - "host.docker.internal:host-gateway"
     ports:
       - "${VEYON_GATEWAY_FORWARD_PORT:-8088}:8088"
+    # To use auth_keys from a file, mount it read-only and set
+    # VEYON_AUTH_KEYDATA_FILE to the container path, for example:
+    # volumes:
+    #   - ./secrets/veyon-auth-key.pem:/run/secrets/veyon-auth-key.pem:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8088/v1/health >/dev/null 2>&1"]
       interval: 10s

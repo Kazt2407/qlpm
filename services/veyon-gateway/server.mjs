@@ -1,4 +1,5 @@
 import http from "node:http";
+import { readFileSync } from "node:fs";
 import { URL } from "node:url";
 
 const PORT = Number(process.env.GATEWAY_PORT || 8088);
@@ -40,7 +41,7 @@ function defaultCredentialsFor(authMethod) {
   switch (authMethod) {
     case "auth_keys": {
       const keyname = process.env.VEYON_AUTH_KEYNAME;
-      const keydata = process.env.VEYON_AUTH_KEYDATA;
+      const keydata = readAuthKeyData();
       return keyname && keydata ? { keyname, keydata } : null;
     }
     case "auth_logon":
@@ -56,6 +57,20 @@ function defaultCredentialsFor(authMethod) {
     default:
       return null;
   }
+}
+
+function readAuthKeyData() {
+  const keydataFile = process.env.VEYON_AUTH_KEYDATA_FILE;
+  if (keydataFile) {
+    try {
+      return readFileSync(keydataFile, "utf8");
+    } catch (error) {
+      console.error(`Unable to read VEYON_AUTH_KEYDATA_FILE at ${keydataFile}: ${error.message}`);
+      return null;
+    }
+  }
+
+  return process.env.VEYON_AUTH_KEYDATA;
 }
 
 function connectionKey(host, authMethod, credentials) {
