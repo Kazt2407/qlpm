@@ -28,9 +28,9 @@ curl http://localhost:8088/v1/health
 - `GATEWAY_CLEANUP_INTERVAL_MS` (default: `30000`)
 - `GATEWAY_REUSE_SKEW_MS` (default: `5000`)
 
-### `auth_keys` báº±ng file
+### `auth_keys` bằng file
 
-Äáº·t file key á»Ÿ host, mount vÃ o container dÆ°á»›i dáº¡ng read-only, sau Ä‘Ã³ trá» `VEYON_AUTH_KEYDATA_FILE` tá»›i Ä‘Æ°á»ng dáº«n bÃªn trong container:
+Đặt file key ở host, mount vào container dưới dạng read-only, sau đó trỏ `VEYON_AUTH_KEYDATA_FILE` tới đường dẫn bên trong container:
 
 ```yaml
 veyon-gateway:
@@ -44,7 +44,7 @@ VEYON_AUTH_KEYNAME=your-key-name
 VEYON_AUTH_KEYDATA_FILE=/run/secrets/veyon-auth-key.pem
 ```
 
-Náº¿u khÃ´ng dÃ¹ng file, cÃ³ thá»ƒ Ä‘áº·t ná»™i dung key trá»±c tiáº¿p trong `VEYON_AUTH_KEYDATA`.
+Nếu không dùng file, có thể đặt nội dung key trực tiếp trong `VEYON_AUTH_KEYDATA`.
 
 ## Endpoint
 

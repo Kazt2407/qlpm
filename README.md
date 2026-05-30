@@ -10,7 +10,7 @@ Hệ thống quản lý phòng máy viết bằng Rails, đã được refactor 
 
 Giao diện hiện dùng light theme và tách luồng rõ ràng cho `admin`, `teacher`, `student`, và bản ghi `system`.
 
-Repo này được tổ chức như một monorepo demo: Rails app, Veyon gateway, database, Adminer, phpMyAdmin, và test runner đều được điều phối từ `docker-compose.yml` ở thư mục gốc. Không cần copy `.env.example` để chạy demo; các giá trị mặc định đã đủ cho một hệ thống local hoàn chỉnh.
+Repo này được tổ chức như một monorepo demo: Rails app, Veyon gateway, database, Adminer, phpMyAdmin, và test runner đều được điều phối từ `docker-compose.yml` ở thư mục gốc. Docker Compose tự đọc file `.env` nếu có; `.env.example` chỉ là file mẫu và không được dùng trực tiếp khi chạy.
 
 ## Công nghệ
 
@@ -306,6 +306,7 @@ curl http://localhost:8088/v1/health
 
 Lưu ý cấu hình bắt buộc:
 
+- Copy `.env.example` thành `.env` trước khi cấu hình Veyon thật. Không nhập secret vào `.env.example`.
 - `VEYON_GATEWAY_API_KEY` phải khớp giữa Rails và gateway
 - `VEYON_WEBAPI_BASE_URL` phải trỏ tới Veyon WebAPI Proxy thực tế, thường là port `11080`
 - Nếu WebAPI Proxy chạy trên Docker host, mặc định `host.docker.internal:11080` đã được map qua `extra_hosts`

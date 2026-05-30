@@ -163,10 +163,8 @@ services:
       - "host.docker.internal:host-gateway"
     ports:
       - "${VEYON_GATEWAY_FORWARD_PORT:-8088}:8088"
-    # To use auth_keys from a file, mount it read-only and set
-    # VEYON_AUTH_KEYDATA_FILE to the container path, for example:
-    # volumes:
-    #   - ./secrets/veyon-auth-key.pem:/run/secrets/veyon-auth-key.pem:ro
+    volumes:
+      - ./secrets:/run/secrets:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8088/v1/health >/dev/null 2>&1"]
       interval: 10s
