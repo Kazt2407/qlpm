@@ -34,6 +34,7 @@ const FEATURE_UIDS = {
   start_app: "da9ca56a-b2ad-4fff-8f8a-929b2927b442"
 };
 
+const FRAMEBUFFER_FORMATS = new Set(["jpeg", "png"]);
 const connectionsByUid = new Map();
 const connectionKeyToUid = new Map();
 
@@ -239,6 +240,27 @@ function logUpstreamFailure(operation, upstream) {
   console.error(
     `[veyon-gateway] ${operation} upstream failed: status=${upstream?.status || 0} content-type=${upstream?.contentType || ""}${body ? ` body=${body}` : ""}`
   );
+}
+
+async function fetchFramebuffer(connection, { format, width, height, quality }) {
+  const upstream = await upstreamRequest("GET", "/api/v1/framebuffer", {
+    headers: { "Connection-Uid": connection.uid },
+    query: {
+      format,
+      width,
+      height,
+      quality: format === "jpeg" ? quality : undefined
+    },
+    binary: true,
+    accept: format === "png" ? "image/png,*/*" : "image/jpeg,*/*"
+  });
+
+  if (!upstream.ok) {
+    logUpstreamFailure(`framebuffer format=${format}`, upstream);
+  }
+
+  upstream.framebufferFormat = format;
+  return upstream;
 }
 
 async function authenticateHost(host, authMethod, credentials) {
@@ -533,26 +555,20 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && framebufferSegments) {
       const [host] = framebufferSegments;
 
-      const format = String(searchParams.get("format") || "jpeg").toLowerCase();
+      const requestedFormat = String(searchParams.get("format") || "jpeg").toLowerCase();
+      const format = FRAMEBUFFER_FORMATS.has(requestedFormat) ? requestedFormat : "jpeg";
       const width = toIntegerOrUndefined(searchParams.get("width"));
       const height = toIntegerOrUndefined(searchParams.get("height"));
       const quality = toIntegerOrUndefined(searchParams.get("quality"));
 
       const result = await callWithConnection(host, async (connection) => {
-        const upstream = await upstreamRequest("GET", "/api/v1/framebuffer", {
-          headers: { "Connection-Uid": connection.uid },
-          query: {
-            format,
-            width,
-            height,
-            quality
-          },
-          binary: true,
-          accept: format === "png" ? "image/png,*/*" : "image/jpeg,*/*"
-        });
+        let upstream = await fetchFramebuffer(connection, { format, width, height, quality });
+
+        if (!upstream.ok && format === "jpeg" && upstream.status === 503) {
+          upstream = await fetchFramebuffer(connection, { format: "png", width, height, quality: undefined });
+        }
 
         if (!upstream.ok) {
-          logUpstreamFailure("framebuffer", upstream);
           return {
             ok: false,
             status: upstream.status || 502,
@@ -563,7 +579,7 @@ const server = http.createServer(async (req, res) => {
         return {
           ok: true,
           buffer: upstream.buffer,
-          contentType: upstream.contentType || (format === "png" ? "image/png" : "image/jpeg")
+          contentType: upstream.contentType || (upstream.framebufferFormat === "png" ? "image/png" : "image/jpeg")
         };
       });
 
