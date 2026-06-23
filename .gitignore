@@ -21,6 +21,21 @@
 .env.*
 !.env.example
 
+# Generated report artifacts and local analysis output
+/.understand-anything/
+/diagrams/
+/output/
+/screenshots/
+/skills/
+/codebase_report.md
+/report_analysis.json
+/*_website_report_*.md
+/*_website_report_*.docx
+/thuongmaidientu_report_*.md
+/thuongmaidientu_report_*.docx
+/website_codebase_report_*.md
+/website_codebase_report_*.docx
+
 # Local secrets mounted into containers
 /secrets/*
 !/secrets/.keep
